@@ -1,9 +1,19 @@
--- HhGames update 1: review approval, leaderboards and play counts.
+-- HhGames: complete database setup (reviews, leaderboards, play counts).
 -- Paste all of this into Supabase → SQL Editor → New query, then tap Run. Safe to run more than once.
 
--- 1. Reviews wait for approval -------------------------------------------------
--- New reviews start hidden. To approve one: Table Editor → reviews → tick "approved".
--- Reviews posted before this update stay visible; this only happens the first time the script runs.
+-- 1. Reviews ------------------------------------------------------------------------
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  game_id text not null
+    check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos')),
+  rating smallint not null check (rating between 1 and 5),
+  name text not null check (char_length(btrim(name)) between 1 and 40),
+  comment text not null default '' check (char_length(comment) <= 500),
+  approved boolean not null default false,          -- new reviews wait for you to approve them
+  created_at timestamptz not null default now(),
+  constraint no_links check (comment !~* '(https?://|www\.)' and name !~* '(https?://|www\.)')
+);
+-- If an older reviews table exists without approval, keep its reviews visible.
 do $$
 begin
   if not exists (select 1 from information_schema.columns
@@ -13,13 +23,20 @@ begin
   end if;
 end $$;
 
+alter table public.reviews enable row level security;
 drop policy if exists "Anyone can read reviews" on public.reviews;
 drop policy if exists "Anyone can read approved reviews" on public.reviews;
 create policy "Anyone can read approved reviews" on public.reviews
   for select to anon, authenticated using (approved);
--- Visitors still can only fill in game, rating, name and comment, so they can't approve their own review.
+drop policy if exists "Anyone can add a review" on public.reviews;
+create policy "Anyone can add a review" on public.reviews
+  for insert to anon, authenticated with check (true);
+-- Visitors can only fill in these four fields, so they can't approve their own review.
+revoke all on public.reviews from anon, authenticated;
+grant select on public.reviews to anon, authenticated;
+grant insert (game_id, rating, name, comment) on public.reviews to anon, authenticated;
 
--- 2. Leaderboards ---------------------------------------------------------------
+-- 2. Leaderboards -------------------------------------------------------------------
 create table if not exists public.scores (
   id uuid primary key default gen_random_uuid(),
   game_id text not null check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar')),
@@ -38,7 +55,7 @@ revoke all on public.scores from anon, authenticated;
 grant select on public.scores to anon, authenticated;
 grant insert (game_id, name, score) on public.scores to anon, authenticated;
 
--- 3. Play counts ----------------------------------------------------------------
+-- 3. Play counts --------------------------------------------------------------------
 create table if not exists public.play_counts (
   game_id text primary key,
   plays bigint not null default 0
@@ -63,3 +80,6 @@ as $$
 $$;
 revoke all on function public.count_play(text) from public;
 grant execute on function public.count_play(text) to anon, authenticated;
+
+-- Make the website see the new tables straight away.
+notify pgrst, 'reload schema';
