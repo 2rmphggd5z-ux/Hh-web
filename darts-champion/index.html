@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!--ARTIFACT-HEAD-START-->
+<title>Darts Champion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<!--ARTIFACT-HEAD-END-->
+<meta name="theme-color" content="#0b0e0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Darts Champion: a mobile darts game with 501, 301, Around the Clock and practice modes.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--ARTIFACT-BODY-START-->
+<div id="app">
+
+  <!-- ===== MAIN MENU ===== -->
+  <section class="screen active" id="screen-menu" aria-label="Main menu">
+    <div class="menu-hero">
+      <div class="menu-board-wrap"><canvas id="menu-board" aria-hidden="true"></canvas></div>
+      <h1 class="logo"><span class="logo-top">Darts</span><span class="logo-bottom">Champion</span></h1>
+      <p class="tagline">Three darts. Double out. No excuses.</p>
+    </div>
+    <nav class="menu-grid">
+      <button class="btn btn-primary btn-wide" data-action="quick"><span class="btn-title">Quick Match</span><span class="btn-sub">501 v Computer · one leg</span></button>
+      <button class="btn" data-action="setup-501"><span class="btn-title">501 Darts</span><span class="btn-sub">Double out</span></button>
+      <button class="btn" data-action="setup-301"><span class="btn-title">301 Darts</span><span class="btn-sub">Faster legs</span></button>
+      <button class="btn" data-action="setup-cricket"><span class="btn-title">Cricket</span><span class="btn-sub">Close 15 to 20 and bull</span></button>
+      <button class="btn" data-action="atc"><span class="btn-title">Around the Clock</span><span class="btn-sub">1 to 20, then bull</span></button>
+      <button class="btn btn-daily btn-wide" data-action="daily" id="daily-btn"><span class="btn-title">Daily Challenge</span><span class="btn-sub" id="daily-sub">Today's puzzle</span></button>
+      <button class="btn" data-action="practice"><span class="btn-title">Practice Mode</span><span class="btn-sub">Free throwing</span></button>
+      <button class="btn" data-action="setup-local"><span class="btn-title">Local Multiplayer</span><span class="btn-sub">Two players, one phone</span></button>
+      <button class="btn btn-quiet" data-action="stats"><span class="btn-title">Statistics</span></button>
+      <button class="btn btn-quiet" data-action="settings"><span class="btn-title">Settings</span></button>
+    </nav>
+    <p class="menu-foot" id="menu-foot"></p>
+  </section>
+
+  <!-- ===== MATCH SETUP ===== -->
+  <section class="screen" id="screen-setup" aria-label="Match setup">
+    <header class="page-head">
+      <button class="icon-btn" data-action="menu" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h2 id="setup-title">501 Darts</h2>
+      <span class="head-spacer"></span>
+    </header>
+    <div class="page-body">
+      <div class="field">
+        <span class="field-label">Game</span>
+        <div class="seg" id="setup-start"><button data-value="501">501</button><button data-value="301">301</button><button data-value="cricket">Cricket</button></div>
+        <p class="field-help" id="setup-cricket-help" hidden>Close 20 to 15 and the bull with three marks each. Once a number is yours, extra marks score points until your opponent closes it. Close everything with the most points to win; after 20 rounds the higher score wins.</p>
+      </div>
+      <div class="field">
+        <span class="field-label">Opponent</span>
+        <div class="seg" id="setup-opponent"><button data-value="ai">Computer</button><button data-value="local">Friend on this phone</button></div>
+      </div>
+      <div class="field" id="setup-ai-field">
+        <span class="field-label">Computer level</span>
+        <div class="seg" id="setup-ai"><button data-value="beginner">Beginner</button><button data-value="intermediate">Intermediate</button><button data-value="pro">Professional</button></div>
+        <p class="field-help" id="setup-ai-help"></p>
+      </div>
+      <div class="field" id="setup-name-field">
+        <label class="field-label" for="setup-p2">Player 2 name</label>
+        <input class="text-input" id="setup-p2" maxlength="14" autocomplete="off" value="Player 2">
+      </div>
+      <div class="field" id="setup-legs-field">
+        <span class="field-label">Match length</span>
+        <div class="seg" id="setup-legs"><button data-value="1">1 leg</button><button data-value="2">Best of 3</button><button data-value="3">Best of 5</button></div>
+      </div>
+      <div class="field">
+        <span class="field-label">First to throw</span>
+        <div class="seg" id="setup-first"><button data-value="0" id="setup-first-p1">You</button><button data-value="1" id="setup-first-p2">Opponent</button></div>
+      </div>
+      <button class="btn btn-primary btn-start" data-action="start-x01"><span class="btn-title">Game on</span></button>
+    </div>
+  </section>
+
+  <!-- ===== GAME ===== -->
+  <section class="screen" id="screen-game" aria-label="Game">
+    <header class="game-top">
+      <button class="icon-btn" data-action="pause" aria-label="Pause"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button>
+      <div class="game-title" id="game-title">501</div>
+      <button class="icon-btn" data-action="history" aria-label="Score history"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg></button>
+      <button class="icon-btn" data-action="mute" id="mute-btn" aria-label="Mute sound"><svg viewBox="0 0 24 24"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="wave" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg></button>
+    </header>
+    <div id="scoreboard"></div>
+    <div class="visitbar" id="visitbar">
+      <div class="slots">
+        <div class="slot" id="slot-0"><span class="slot-label">–</span><span class="slot-val"></span></div>
+        <div class="slot" id="slot-1"><span class="slot-label">–</span><span class="slot-val"></span></div>
+        <div class="slot" id="slot-2"><span class="slot-label">–</span><span class="slot-val"></span></div>
+      </div>
+      <div class="visit-total"><span class="vt-label">Visit</span><span class="vt-val" id="visit-total">0</span></div>
+    </div>
+    <div class="checkout" id="checkout"></div>
+    <div class="board-wrap" id="board-wrap">
+      <canvas id="board" aria-label="Dartboard. Touch and drag to aim, lift your finger to throw."></canvas>
+      <div class="banner" id="banner" aria-live="assertive"></div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+
+  <!-- ===== STATISTICS ===== -->
+  <section class="screen" id="screen-stats" aria-label="Statistics">
+    <header class="page-head">
+      <button class="icon-btn" data-action="menu" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h2>Statistics</h2>
+      <span class="head-spacer"></span>
+    </header>
+    <div class="page-body" id="stats-body"></div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section class="screen" id="screen-settings" aria-label="Settings">
+    <header class="page-head">
+      <button class="icon-btn" data-action="settings-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h2>Settings</h2>
+      <span class="head-spacer"></span>
+    </header>
+    <div class="page-body">
+      <h3 class="group-title">Player</h3>
+      <div class="field">
+        <label class="field-label" for="set-name">Your name</label>
+        <input class="text-input" id="set-name" maxlength="14" autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="field-label">Your darts</span>
+        <div class="swatches" id="set-darts"></div>
+      </div>
+      <div class="field">
+        <span class="field-label">Board</span>
+        <div class="swatches" id="set-theme"></div>
+      </div>
+
+      <h3 class="group-title">Throwing</h3>
+      <div class="field">
+        <span class="field-label">Throw difficulty</span>
+        <div class="seg" id="set-throw"><button data-value="relaxed">Relaxed</button><button data-value="standard">Standard</button><button data-value="pro">Pro</button></div>
+        <p class="field-help" id="set-throw-help"></p>
+      </div>
+      <div class="field">
+        <span class="field-label">Throw style</span>
+        <div class="seg" id="set-style"><button data-value="flick">Flick up</button><button data-value="lift">Lift to throw</button></div>
+        <p class="field-help" id="set-style-help"></p>
+      </div>
+      <div class="field">
+        <label class="field-label" for="set-sens">Aim sensitivity <output id="set-sens-out"></output></label>
+        <input type="range" id="set-sens" min="0.35" max="1.2" step="0.05">
+        <p class="field-help">Lower is finer. Your finger moves further for the same change of aim.</p>
+      </div>
+      <div class="field toggle-row">
+        <label for="set-loupe">Zoom lens while aiming</label>
+        <input type="checkbox" id="set-loupe" class="switch">
+      </div>
+      <div class="field">
+        <span class="field-label">Default computer level</span>
+        <div class="seg" id="set-ai"><button data-value="beginner">Beginner</button><button data-value="intermediate">Intermediate</button><button data-value="pro">Professional</button></div>
+      </div>
+
+      <h3 class="group-title">Sound &amp; feel</h3>
+      <div class="field toggle-row">
+        <label for="set-sound">Sound effects</label>
+        <input type="checkbox" id="set-sound" class="switch">
+      </div>
+      <div class="field">
+        <label class="field-label" for="set-volume">Volume <output id="set-volume-out"></output></label>
+        <input type="range" id="set-volume" min="0" max="1" step="0.05">
+      </div>
+      <div class="field toggle-row">
+        <label for="set-caller">Caller voice <small id="caller-note"></small></label>
+        <input type="checkbox" id="set-caller" class="switch">
+      </div>
+      <div class="field toggle-row">
+        <label for="set-ambience">Pub ambience</label>
+        <input type="checkbox" id="set-ambience" class="switch">
+      </div>
+      <div class="field toggle-row">
+        <label for="set-haptics">Vibration <small id="haptic-note"></small></label>
+        <input type="checkbox" id="set-haptics" class="switch">
+      </div>
+
+      <h3 class="group-title">Data</h3>
+      <button class="btn btn-danger" data-action="reset-stats"><span class="btn-title">Reset statistics</span></button>
+    </div>
+  </section>
+
+  <!-- ===== OVERLAYS ===== -->
+  <div class="overlay" id="overlay-pause" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+      <h2 id="pause-title">Paused</h2>
+      <button class="btn btn-primary" data-action="resume"><span class="btn-title">Resume</span></button>
+      <button class="btn" data-action="restart"><span class="btn-title">Restart</span></button>
+      <button class="btn" data-action="settings"><span class="btn-title">Settings</span></button>
+      <button class="btn btn-quiet" data-action="quit"><span class="btn-title">Main menu</span></button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay-confirm" hidden>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-text"></p>
+      <div class="dialog-row">
+        <button class="btn btn-quiet" id="confirm-no"><span class="btn-title">Cancel</span></button>
+        <button class="btn btn-danger" id="confirm-yes"><span class="btn-title">Yes</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay overlay-win" id="overlay-win" hidden>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div class="dialog dialog-win" role="dialog" aria-modal="true" aria-labelledby="win-title">
+      <p class="win-kicker" id="win-kicker">Game shot and the match</p>
+      <h2 id="win-title">You win</h2>
+      <div class="win-stats" id="win-stats"></div>
+      <p class="win-unlock" id="win-unlock" hidden></p>
+      <div class="dialog-row">
+        <button class="btn btn-quiet" data-action="quit-now"><span class="btn-title">Menu</span></button>
+        <button class="btn btn-primary" data-action="again"><span class="btn-title">Play again</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet-history" hidden>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="history-title">
+      <div class="sheet-head"><h2 id="history-title">Score history</h2><button class="icon-btn" data-action="close-sheet" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="sheet-body" id="history-body"></div>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet-target" hidden>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="target-title">
+      <div class="sheet-head"><h2 id="target-title">Custom target</h2><button class="icon-btn" data-action="close-sheet" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="sheet-body">
+        <span class="field-label">Number</span>
+        <div class="num-grid" id="target-numbers"></div>
+        <span class="field-label">Bed</span>
+        <div class="seg" id="target-ring"><button data-value="any">Any</button><button data-value="S">Single</button><button data-value="D">Double</button><button data-value="T">Treble</button></div>
+        <button class="btn btn-primary" data-action="apply-target"><span class="btn-title">Practise this</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="scoring.js"></script>
+<script src="ai.js"></script>
+<script src="challenges.js"></script>
+<script src="audio.js"></script>
+<script src="board.js"></script>
+<script src="game.js"></script>
+<!--ARTIFACT-BODY-END-->
+</body>
+</html>
