@@ -263,9 +263,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
   background: var(--surface); border-top: 2px solid var(--ink);
   padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
-  grid-template-columns: repeat(4, 1fr); gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px;
 }
-.tabbar a { flex-direction: column; gap: 2px; padding: 6px 2px; font-size: .74rem; justify-content: center; }
+.tabbar a { flex-direction: column; gap: 2px; padding: 6px 0; font-size: .7rem; justify-content: center; min-width: 0; }
+.tabbar a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tabbar svg { width: 24px; height: 24px; }
 .tabbar a[aria-current="page"] { color: var(--accent); }
 .tabbar a[aria-current="page"] svg { transform: translateY(-1px); }
@@ -386,8 +387,16 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .lb .s { font-weight: 800; }
 .lb li.me { background: color-mix(in srgb, var(--sticker) 22%, var(--surface)); }
 .lb .empty-row { display: block; color: var(--muted); text-align: center; padding: 16px; }
-.lb .empty-row::before { content: none; }
-.lbwhat { margin: 0 0 10px; color: var(--muted); font-size: .9rem; }
+.lb li.empty-row::before { content: none; display: none; }
+.lbwhat { margin: 0; color: var(--muted); font-size: .9rem; }
+.lbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 400px) { .lbgrid { grid-template-columns: minmax(0, 1fr); } }
+.lbcard { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lbhead { display: flex; gap: 14px; align-items: center; }
+.lbhead img { width: 84px; height: 63px; object-fit: cover; border-radius: 10px; border: 2px solid var(--ink); flex: none; }
+.lbhead div { min-width: 0; }
+.lbhead h2 { margin: 0 0 2px; font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
+.lbcard .btn { align-self: flex-start; }
 
 /* New-best strip inside the player */
 .scorestrip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: var(--sticker); color: var(--sticker-ink);
@@ -406,7 +415,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 <nav class="nav" aria-label="Menu">
   <div class="wrap navin">
     <a class="mini" href="#dashboard" aria-label="HhGames home"><span class="hh">Hh</span>Games</a>
-    <div class="links"><a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span>Dashboard</span></a><a href="#games" data-view="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14 16h-4l-2.4 2.1A2.7 2.7 0 0 1 3 16.8l-.9-4.4A4.5 4.5 0 0 1 6.5 7Z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="16" cy="11" r=".6" fill="currentColor"/><circle cx="17.8" cy="13" r=".6" fill="currentColor"/></svg><span>Games</span></a><a href="#reviews" data-view="reviews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z"/></svg><span>Reviews</span></a><a href="#about" data-view="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor"/></svg><span>About</span></a></div>
+    <div class="links"><a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span>Dashboard</span></a><a href="#games" data-view="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14 16h-4l-2.4 2.1A2.7 2.7 0 0 1 3 16.8l-.9-4.4A4.5 4.5 0 0 1 6.5 7Z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="16" cy="11" r=".6" fill="currentColor"/><circle cx="17.8" cy="13" r=".6" fill="currentColor"/></svg><span>Games</span></a><a href="#leaderboards" data-view="leaderboards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4"/><path d="M12 14v3M8.5 20h7M10 17h4v3h-4z"/></svg><span>Leaderboards</span></a><a href="#reviews" data-view="reviews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z"/></svg><span>Reviews</span></a><a href="#about" data-view="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor"/></svg><span>About</span></a></div>
   </div>
 </nav>
 
@@ -436,12 +445,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         <h2 class="sh" id="dPlay">Jump in <small>Playable now</small></h2>
         <div class="grid" id="dashPlay"></div>
       </section>
-      <section aria-labelledby="dLb">
-        <h2 class="sh" id="dLb">Leaderboards <small>Top 10</small></h2>
-        <div class="lbtabs" id="lbTabs" role="group" aria-label="Choose a game"></div>
-        <p class="lbwhat" id="lbWhat"></p>
-        <ol class="lb" id="lbList"></ol>
-      </section>
+
       <section aria-labelledby="dRev">
         <h2 class="sh" id="dRev">Latest reviews <small><a href="#reviews" style="color:inherit">See all</a></small></h2>
         <ul class="revlist" id="dashRevs"></ul>
@@ -466,6 +470,14 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         <h2 class="sh" id="gSoon">Coming soon <small id="nSoon"></small></h2>
         <div class="grid" id="gridSoon"></div>
       </section>
+    </div>
+  </div>
+
+  <!-- LEADERBOARDS -->
+  <div class="view" id="view-leaderboards" data-view="leaderboards" hidden>
+    <div class="wrap">
+      <header class="pagehead"><h1>Leaderboards</h1><p>The top 10 players in each game. Beat your best while playing here on HhGames and you can add your name.</p></header>
+      <div class="lbgrid" id="lbAll"></div>
     </div>
   </div>
 
@@ -536,7 +548,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 
 <footer class="wrap">© HhGames · Created by Harry Davies · <a href="privacy.html" style="color:inherit">Privacy</a></footer>
 
-<nav class="tabbar" aria-label="Menu"><a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span>Dashboard</span></a><a href="#games" data-view="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14 16h-4l-2.4 2.1A2.7 2.7 0 0 1 3 16.8l-.9-4.4A4.5 4.5 0 0 1 6.5 7Z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="16" cy="11" r=".6" fill="currentColor"/><circle cx="17.8" cy="13" r=".6" fill="currentColor"/></svg><span>Games</span></a><a href="#reviews" data-view="reviews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z"/></svg><span>Reviews</span></a><a href="#about" data-view="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor"/></svg><span>About</span></a></nav>
+<nav class="tabbar" aria-label="Menu"><a href="#dashboard" data-view="dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg><span>Dashboard</span></a><a href="#games" data-view="games" aria-label="Games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.7 2.7 0 0 1-4.6 1.3L14 16h-4l-2.4 2.1A2.7 2.7 0 0 1 3 16.8l-.9-4.4A4.5 4.5 0 0 1 6.5 7Z"/><path d="M7.5 10.5v3M6 12h3"/><circle cx="16" cy="11" r=".6" fill="currentColor"/><circle cx="17.8" cy="13" r=".6" fill="currentColor"/></svg><span>Games</span></a><a href="#leaderboards" data-view="leaderboards" aria-label="Leaderboards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4"/><path d="M12 14v3M8.5 20h7M10 17h4v3h-4z"/></svg><span>Scores</span></a><a href="#reviews" data-view="reviews" aria-label="Reviews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8Z"/></svg><span>Reviews</span></a><a href="#about" data-view="about" aria-label="About"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor"/></svg><span>About</span></a></nav>
 <div class="scrim" id="detail" hidden></div>
 <div class="player" id="player" hidden role="dialog" aria-modal="true" aria-labelledby="playerTitle">
   <div class="pbar"><b id="playerTitle">Playing</b>
@@ -559,7 +571,6 @@ const NEWS = [["2026-10-21", "Leaderboards are live. Beat your best in Track Sta
   let plays = null;                       // {game_id: count} once loaded
   const boards = {};                      // {game_id: [{name, score}]} once loaded
   const boardFail = {};
-  let lbGame = (GAMES.find((g) => g.board && isPlayable(g)) || {}).id;
   const fmtN = (n) => Number(n).toLocaleString("en-GB");
   function scoreText(g, n) { return g.board && g.board.unit === "level" ? "Level " + fmtN(n) : fmtN(n) + " pts"; }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -684,11 +695,17 @@ const NEWS = [["2026-10-21", "Leaderboards are live. Beat your best in Track Sta
     $("news").replaceChildren(...NEWS.slice(0, 5).map(([d, t]) => {
       const li = el("li"); const tm = el("time", null, new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
       tm.dateTime = d; li.appendChild(tm); li.appendChild(el("span", null, t)); return li; }));
-    const lbg = GAMES.filter((g) => g.board && isPlayable(g));
-    $("lbTabs").replaceChildren(...lbg.map((g) => { const b = el("button", "chip", g.title); b.type = "button";
-      b.setAttribute("aria-pressed", String(g.id === lbGame)); b.onclick = () => { lbGame = g.id; render(); }; return b; }));
-    const cur = byId[lbGame];
-    if (cur) { $("lbWhat").textContent = cur.board.what; $("lbList").replaceWith(Object.assign(boardList(cur, 10), { id: "lbList" })); }
+    $("lbAll").replaceChildren(...GAMES.filter((g) => g.board && isPlayable(g)).map((g) => {
+      const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " leaderboard");
+      const head = el("div", "lbhead");
+      const im = el("img"); im.alt = ""; im.src = g.cover; im.loading = "lazy"; head.appendChild(im);
+      const t = el("div"); t.appendChild(el("h2", null, g.title)); t.appendChild(el("p", "lbwhat", g.board.what)); head.appendChild(t);
+      sec.appendChild(head);
+      sec.appendChild(boardList(g, 10));
+      const pb = el("button", "btn primary", "▶ Play " + g.title); pb.type = "button"; pb.onclick = () => openPlayer(g);
+      sec.appendChild(pb);
+      return sec;
+    }));
     if (revState === "ready") {
       $("sRevs").textContent = String(reviews.length).padStart(2, "0");
       $("sAvg").textContent = reviews.length ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : "–";
@@ -813,7 +830,7 @@ const NEWS = [["2026-10-21", "Leaderboards are live. Beat your best in Track Sta
   });
 
   // ---------- menu (one view at a time, linked by #dashboard, #games, #reviews, #about)
-  const VIEWS = ["dashboard", "games", "reviews", "about"];
+  const VIEWS = ["dashboard", "games", "leaderboards", "reviews", "about"];
   function show() {
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
     document.querySelectorAll(".view").forEach((s) => { s.hidden = s.dataset.view !== v; });
