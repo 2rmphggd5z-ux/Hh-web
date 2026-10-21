@@ -1061,9 +1061,8 @@ const NEWS = [["2026-10-21", "New: weekly leaderboards. Everyone starts fresh on
     if (!d || d.type !== "hh-score" || !playing || d.game !== playing.id || !playing.board || !API) return;
     const score = Math.floor(Number(d.score));
     if (!(score > 0 && score <= 100000000)) return;
-    const best = Number(store("hh-best-" + playing.id) || 0);
+    const best = Number(store("hh-sent-" + playing.id) || 0);   // best score actually saved to the leaderboard
     if (score <= best) return;                       // only offer new personal bests
-    store("hh-best-" + playing.id, String(score));
     const g = playing, name = store("hh-name");
     if (name && store("hh-auto") === "1") {           // already added a score before: save without asking
       postScore(g, score, name).then(() => offerShare(g, score)).catch(() => offerScore(g, score));
