@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>HhGames admin</title>
+<meta name="theme-color" content="#15172b">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+:root {
+  --bg: #eceef6; --surface: #ffffff; --ink: #15172b; --muted: #5d6180; --line: #d5d8e8;
+  --accent: #2f4bff; --accent-ink: #ffffff; --sticker: #ffc53d; --good: #14894a; --danger: #d6321f; --star: #f5a300;
+  --body: "Bricolage Grotesque", "Segoe UI", Roboto, system-ui, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e1022; --surface: #171a33; --ink: #eef0fa; --muted: #9ea3c6; --line: #2a2e52; --accent: #7c8cff; --accent-ink: #0e1022;
+    --good: #4cd38a; --danger: #ff6b57; --star: #ffc53d; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 1rem; line-height: 1.5; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { background: var(--surface); border-bottom: 2px solid var(--ink); position: sticky; top: 0; z-index: 5; }
+header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.mini { font-weight: 800; letter-spacing: -.035em; font-size: 1.3rem; color: var(--ink); text-decoration: none; display: inline-flex; gap: .1em; align-items: center; }
+.mini b { background: var(--sticker); color: #15172b; padding: 0 .14em; border-radius: .14em; display: inline-block; transform: rotate(-4deg); box-shadow: .05em .06em 0 var(--ink); }
+.mini span { font-weight: 600; color: var(--muted); font-size: .9rem; letter-spacing: 0; margin-left: .4em; }
+main { padding-block: 20px 60px; }
+h1 { font-size: 1.7rem; line-height: 1.1; margin: 0 0 6px; letter-spacing: -.02em; }
+.sub { margin: 0 0 18px; color: var(--muted); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 2px solid var(--ink); border-radius: 10px;
+  padding: 7px 14px; font-weight: 800; cursor: pointer; background: var(--surface); color: var(--ink); white-space: nowrap; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.good { background: var(--good); border-color: var(--good); color: #fff; }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.btn.danger.armed { background: var(--danger); color: #fff; }
+.btn.small { padding: 4px 10px; font-size: .9rem; }
+.btn[disabled] { opacity: .5; cursor: progress; }
+.panel { background: var(--surface); border: 2px solid var(--ink); border-radius: 14px; padding: 18px; }
+form.login { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: .9rem; }
+input[type=email], input[type=password] { border: 2px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--bg); width: 100%; }
+input:focus { border-color: var(--accent); outline: none; }
+.err { color: var(--danger); font-weight: 600; margin: 0; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tab { border: 2px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.count { background: var(--sticker); color: #15172b; border-radius: 999px; padding: 0 8px; font-size: .8rem; min-width: 1.6em; text-align: center; }
+.count.zero { background: var(--line); color: var(--muted); }
+h2 { font-size: 1.1rem; margin: 22px 0 10px; display: flex; gap: 8px; align-items: baseline; }
+h2 small { color: var(--muted); font-weight: 600; font-size: .85rem; }
+ul.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.item { background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.item.waiting { border-color: var(--ink); }
+.item .top { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.item .who { font-weight: 800; overflow-wrap: anywhere; }
+.item .meta { color: var(--muted); font-size: .85rem; }
+.item .when { margin-left: auto; color: var(--muted); font-size: .85rem; white-space: nowrap; }
+.item p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.item .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.stars { color: var(--star); letter-spacing: .05em; }
+.stars i { color: var(--line); font-style: normal; }
+.empty { border: 2px dashed var(--line); border-radius: 12px; padding: 16px; color: var(--muted); text-align: center; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip { border: 2px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px; font-weight: 600; cursor: pointer; font-size: .9rem; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.row { display: grid; grid-template-columns: 2em minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 12px; font-variant-numeric: tabular-nums; }
+.rows { background: var(--surface); border: 2px solid var(--line); border-radius: 12px; overflow: hidden; }
+.row + .row { border-top: 1px solid var(--line); }
+.row .rank { color: var(--muted); font-weight: 800; text-align: center; }
+.row .n { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .s { font-weight: 800; }
+details summary { cursor: pointer; font-weight: 800; margin: 22px 0 10px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-weight: 600; max-width: calc(100% - 32px); }
+.note { color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="mini" href="./"><b>Hh</b>Games<span>Admin</span></a>
+  <button class="btn small" id="signOut" type="button" hidden>Sign out</button>
+</div></header>
+<main class="wrap">
+  <section id="loginView" hidden>
+    <h1>Admin sign in</h1>
+    <p class="sub">Only Harry's account can manage reviews, bug reports and scores.</p>
+    <form class="login panel" id="loginForm" novalidate>
+      <label>Email <input type="email" id="email" autocomplete="username" required></label>
+      <label>Password <input type="password" id="password" autocomplete="current-password" required></label>
+      <p class="err" id="loginErr" hidden></p>
+      <button class="btn primary" type="submit" id="loginBtn">Sign in</button>
+    </form>
+  </section>
+
+  <section id="notAdmin" hidden>
+    <h1>This account isn't an admin</h1>
+    <p class="sub" id="notAdminText"></p>
+  </section>
+
+  <section id="adminView" hidden>
+    <h1>Manage HhGames</h1>
+    <p class="sub">Approve reviews, sort bug reports and remove scores. Changes show on the site straight away.</p>
+    <div class="tabs" role="group" aria-label="Sections">
+      <button class="tab" type="button" data-tab="reviews" aria-pressed="true">Reviews <span class="count" id="cReviews">0</span></button>
+      <button class="tab" type="button" data-tab="reports" aria-pressed="false">Bug reports <span class="count" id="cReports">0</span></button>
+      <button class="tab" type="button" data-tab="scores" aria-pressed="false">Scores</button>
+    </div>
+    <div id="tab-reviews">
+      <h2>Waiting for approval <small id="nWaiting"></small></h2>
+      <ul class="items" id="waitingList"></ul>
+      <details id="approvedBox"><summary id="approvedSummary">Approved reviews</summary><ul class="items" id="approvedList"></ul></details>
+    </div>
+    <div id="tab-reports" hidden>
+      <h2>Open reports <small id="nOpen"></small></h2>
+      <ul class="items" id="openList"></ul>
+      <details><summary id="fixedSummary">Fixed reports</summary><ul class="items" id="fixedList"></ul></details>
+    </div>
+    <div id="tab-scores" hidden>
+      <div class="chips" id="scoreGames" role="group" aria-label="Game"></div>
+      <p class="note">Every score saved for this game, best first. Delete any that look like cheating.</p>
+      <div class="rows" id="scoreList"></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden role="status"></div>
+<script>
+const SB = { url: "https://mwlnnyjdnyorqrqgauny.supabase.co", key: "sb_publishable_UVwCZhYIxuXzhfC7uebIPg_6JY0o6TN" };
+const TITLES = {"track-star-3d": "Track Star 3D", "army-rush": "Army Rush", "street-to-superstar": "Street to Superstar", "quick-chaos": "Quick Chaos", "darts-championship": "Darts Champion", "website": "The website"};
+const BOARDS = [{"id": "track-star-3d", "title": "Track Star 3D", "unit": "pts"}, {"id": "army-rush", "title": "Army Rush", "unit": "level"}, {"id": "street-to-superstar", "title": "Street to Superstar", "unit": "pts"}, {"id": "darts-championship", "title": "Darts Champion", "unit": "pts"}];
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  const KEY = "hh-admin-session";
+  let session = null, tab = "reviews", scoreGame = BOARDS.length ? BOARDS[0].id : null;
+  let reviews = [], reports = [], scores = [];
+  function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 2400); }
+  function save(s) { session = s; try { s ? localStorage.setItem(KEY, JSON.stringify(s)) : localStorage.removeItem(KEY); } catch (e) {} }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
+  function when(ts) { const d = new Date(ts); return isNaN(d) ? "" : d.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  function show(view) { ["loginView", "notAdmin", "adminView"].forEach((v) => { $(v).hidden = v !== view; }); $("signOut").hidden = view === "loginView"; }
+
+  // ---------- auth
+  async function auth(grant, body) {
+    const res = await fetch(SB.url + "/auth/v1/token?grant_type=" + grant, { method: "POST", headers: { apikey: SB.key, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.access_token) throw j;
+    return { access: j.access_token, refresh: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000, email: j.user && j.user.email };
+  }
+  async function token() {
+    if (!session) throw { code: "signed_out" };
+    if (Date.now() > session.exp - 60000) {
+      try { save(Object.assign(await auth("refresh_token", { refresh_token: session.refresh }), { email: session.email })); }
+      catch (e) { save(null); show("loginView"); throw { code: "signed_out" }; }
+    }
+    return session.access;
+  }
+  async function api(path, opts) {
+    opts = opts || {};
+    const h = { apikey: SB.key, Authorization: "Bearer " + await token(), "Content-Type": "application/json" };
+    if (opts.prefer) h.Prefer = opts.prefer;
+    const res = await fetch(SB.url + "/rest/v1/" + path, { method: opts.method || "GET", headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (res.status === 401) { save(null); show("loginView"); throw { code: "signed_out" }; }
+    if (!res.ok) throw { code: res.status };
+    return res.status === 204 || opts.prefer === "return=minimal" ? null : res.json();
+  }
+
+  $("loginForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const email = $("email").value.trim(), password = $("password").value;
+    const err = $("loginErr"); err.hidden = true;
+    if (!email || !password) { err.textContent = "Enter your email and password."; err.hidden = false; return; }
+    const b = $("loginBtn"); b.disabled = true; b.textContent = "Signing in…";
+    try { save(await auth("password", { email, password })); $("password").value = ""; await start(); }
+    catch (e) {
+      err.textContent = e && /invalid/i.test(e.error_description || e.msg || e.message || "") ? "That email and password don't match. Check them and try again."
+        : "Couldn't sign in. Check your connection and try again.";
+      err.hidden = false;
+    } finally { b.disabled = false; b.textContent = "Sign in"; }
+  });
+  $("signOut").onclick = () => {
+    if (session) fetch(SB.url + "/auth/v1/logout", { method: "POST", headers: { apikey: SB.key, Authorization: "Bearer " + session.access } }).catch(() => {});
+    save(null); show("loginView");
+  };
+
+  // ---------- data
+  async function loadAll() {
+    const [r, p] = await Promise.all([
+      api("reviews?select=id,game_id,rating,name,comment,approved,created_at&order=created_at.desc&limit=500"),
+      api("reports?select=id,about,message,name,device,fixed,created_at&order=created_at.desc&limit=500"),
+    ]);
+    reviews = r || []; reports = p || [];
+    render();
+    if (scoreGame) loadScores();
+  }
+  async function loadScores() {
+    scores = await api("scores?select=id,name,score,created_at&game_id=eq." + encodeURIComponent(scoreGame) + "&order=score.desc,created_at.asc&limit=200") || [];
+    renderScores();
+  }
+
+  // ---------- render
+  function starText(n) { const s = el("span", "stars", "★".repeat(n)); const i = el("i", null, "★".repeat(5 - n)); s.appendChild(i); s.setAttribute("aria-label", n + " out of 5 stars"); return s; }
+  function confirmBtn(label, fn) {
+    const b = el("button", "btn small danger", label); b.type = "button";
+    b.onclick = async () => {
+      if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Tap again to delete"; setTimeout(() => { b.classList.remove("armed"); b.textContent = label; }, 4000); return; }
+      b.disabled = true; try { await fn(); } catch (e) { b.disabled = false; toast("That didn't work. Try again."); }
+    };
+    return b;
+  }
+  function actBtn(label, cls, fn) {
+    const b = el("button", "btn small " + cls, label); b.type = "button";
+    b.onclick = async () => { b.disabled = true; try { await fn(); } catch (e) { b.disabled = false; toast("That didn't work. Try again."); } };
+    return b;
+  }
+  function reviewItem(r) {
+    const li = el("li", "item" + (r.approved ? "" : " waiting"));
+    const top = el("div", "top");
+    top.appendChild(el("span", "who", r.name || "Player")); top.appendChild(starText(r.rating));
+    top.appendChild(el("span", "meta", "on " + (TITLES[r.game_id] || r.game_id))); top.appendChild(el("span", "when", when(r.created_at)));
+    li.appendChild(top);
+    li.appendChild(r.comment ? el("p", null, r.comment) : el("p", "meta", "No written review, just a star rating."));
+    const acts = el("div", "acts");
+    if (!r.approved) acts.appendChild(actBtn("✓ Approve", "good", async () => {
+      await api("reviews?id=eq." + r.id, { method: "PATCH", body: { approved: true }, prefer: "return=minimal" }); r.approved = true; render(); toast("Approved. It's on the site now."); }));
+    else acts.appendChild(actBtn("Hide from site", "", async () => {
+      await api("reviews?id=eq." + r.id, { method: "PATCH", body: { approved: false }, prefer: "return=minimal" }); r.approved = false; render(); toast("Hidden from the site."); }));
+    acts.appendChild(confirmBtn("Delete", async () => {
+      await api("reviews?id=eq." + r.id, { method: "DELETE", prefer: "return=minimal" }); reviews = reviews.filter((x) => x !== r); render(); toast("Review deleted."); }));
+    li.appendChild(acts);
+    return li;
+  }
+  function reportItem(r) {
+    const li = el("li", "item" + (r.fixed ? "" : " waiting"));
+    const top = el("div", "top");
+    top.appendChild(el("span", "who", TITLES[r.about] || r.about));
+    if (r.name) top.appendChild(el("span", "meta", "from " + r.name));
+    top.appendChild(el("span", "when", when(r.created_at)));
+    li.appendChild(top);
+    li.appendChild(el("p", null, r.message));
+    if (r.device) li.appendChild(el("span", "meta", r.device));
+    const acts = el("div", "acts");
+    acts.appendChild(actBtn(r.fixed ? "Reopen" : "✓ Mark fixed", r.fixed ? "" : "good", async () => {
+      await api("reports?id=eq." + r.id, { method: "PATCH", body: { fixed: !r.fixed }, prefer: "return=minimal" }); r.fixed = !r.fixed; render(); toast(r.fixed ? "Marked as fixed." : "Reopened."); }));
+    acts.appendChild(confirmBtn("Delete", async () => {
+      await api("reports?id=eq." + r.id, { method: "DELETE", prefer: "return=minimal" }); reports = reports.filter((x) => x !== r); render(); toast("Report deleted."); }));
+    li.appendChild(acts);
+    return li;
+  }
+  function fill(list, items, make, emptyText) {
+    list.replaceChildren(...(items.length ? items.map(make) : [el("li", "empty", emptyText)]));
+  }
+  function render() {
+    const waiting = reviews.filter((r) => !r.approved), approved = reviews.filter((r) => r.approved);
+    const open = reports.filter((r) => !r.fixed), fixed = reports.filter((r) => r.fixed);
+    $("cReviews").textContent = waiting.length; $("cReviews").classList.toggle("zero", !waiting.length);
+    $("cReports").textContent = open.length; $("cReports").classList.toggle("zero", !open.length);
+    $("nWaiting").textContent = waiting.length ? waiting.length + " to check" : "";
+    $("nOpen").textContent = open.length ? open.length + " open" : "";
+    fill($("waitingList"), waiting, reviewItem, "Nothing waiting. New reviews will appear here.");
+    fill($("approvedList"), approved, reviewItem, "No approved reviews yet.");
+    $("approvedSummary").textContent = "Approved reviews (" + approved.length + ")";
+    fill($("openList"), open, reportItem, "No open bug reports.");
+    fill($("fixedList"), fixed, reportItem, "No fixed reports yet.");
+    $("fixedSummary").textContent = "Fixed reports (" + fixed.length + ")";
+    document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-pressed", String(t.dataset.tab === tab)));
+    ["reviews", "reports", "scores"].forEach((k) => { $("tab-" + k).hidden = k !== tab; });
+    $("scoreGames").replaceChildren(...BOARDS.map((g) => { const c = el("button", "chip", g.title); c.type = "button";
+      c.setAttribute("aria-pressed", String(g.id === scoreGame)); c.onclick = () => { scoreGame = g.id; render(); loadScores().catch(() => toast("Scores didn't load.")); }; return c; }));
+  }
+  function renderScores() {
+    const g = BOARDS.find((b) => b.id === scoreGame);
+    const box = $("scoreList");
+    if (!scores.length) { box.replaceChildren(el("div", "empty", "No scores for this game yet.")); return; }
+    box.replaceChildren(...scores.map((s, i) => {
+      const row = el("div", "row");
+      row.appendChild(el("span", "rank", String(i + 1)));
+      const n = el("span", "n", s.name); n.title = when(s.created_at); row.appendChild(n);
+      row.appendChild(el("span", "s", g && g.unit === "level" ? "Level " + s.score : Number(s.score).toLocaleString("en-GB")));
+      row.appendChild(confirmBtn("Delete", async () => {
+        await api("scores?id=eq." + s.id, { method: "DELETE", prefer: "return=minimal" }); scores = scores.filter((x) => x !== s); renderScores(); toast("Score removed."); }));
+      return row;
+    }));
+  }
+  document.querySelectorAll(".tab").forEach((t) => { t.onclick = () => { tab = t.dataset.tab; render(); }; });
+
+  async function start() {
+    session = session || load();
+    if (!session) { show("loginView"); return; }
+    try {
+      const ok = await api("rpc/is_admin", { method: "POST", body: {} });
+      if (ok !== true) {
+        $("notAdminText").textContent = "You're signed in as " + (session.email || "this account") + ", but it isn't on the admin list. In Supabase, run add-admin.sql with this email, then sign in again.";
+        show("notAdmin"); return;
+      }
+      show("adminView");
+      await loadAll();
+    } catch (e) {
+      if (e && e.code === "signed_out") return;
+      if (e && e.code === 404) { $("notAdminText").textContent = "The admin setup hasn't been run yet. In Supabase, run add-admin.sql, then sign in again."; show("notAdmin"); return; }
+      show("adminView"); toast("Couldn't load. Check your connection and refresh.");
+    }
+  }
+  start();
+})();
+</script>
+</body>
+</html>
