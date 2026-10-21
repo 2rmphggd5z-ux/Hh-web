@@ -1549,6 +1549,7 @@ function endGame(){
       }
     }
   }
+  if(!c.career&&c.mode==='timed'&&game.score>0){try{if(window.parent!==window)window.parent.postMessage({type:'hh-score',game:'street-to-superstar',score:game.score},'*')}catch(e){} /* tell HhGames about the score */}
   S.coins+=coins;
   const ups=addXP(xp);
   const leagueAfter=topLeague();
