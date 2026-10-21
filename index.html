@@ -785,10 +785,6 @@ const NEWS = [["2026-10-21", "Leaderboards are live. Beat your best in Track Sta
       }
     } else acts.appendChild(el("p", "ctag", "Not playable yet. Check back soon."));
     b.appendChild(acts);
-    if (isPlayable(g) && g.board) {
-      b.appendChild(el("h3", null, "Leaderboard · " + g.board.what));
-      b.appendChild(boardList(g, 10));
-    }
     if (isPlayable(g) && revState === "ready") {
       const rs = reviews.filter((r) => r.game_id === g.id).slice(0, 3);
       if (rs.length) { b.appendChild(el("h3", null, "What players say")); const ul = el("ul", "revlist"); rs.forEach((r) => ul.appendChild(reviewItem(r, false))); b.appendChild(ul); }
