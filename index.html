@@ -356,6 +356,11 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .gamelist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .gamelist li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
 .gamelist span { color: var(--muted); font-size: .9rem; text-align: right; }
+
+/* The name uses a font with lowercase letters so it reads "Hh", not "HH" */
+.logo, .mini, .sumcard .sw, .brand { font-family: var(--body); font-weight: 800; letter-spacing: -.035em; }
+.logo { line-height: .95; }
+.logo .hh, .mini .hh { padding: .02em .14em .04em; }
 </style>
 </head>
 <body>
@@ -465,7 +470,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
       </div>
       <div class="aboutgrid">
         <div class="panel">
-          <h2>What is HhGames?</h2>
+          <h2>What is <span class="brand">HhGames</span>?</h2>
           <p style="margin:0 0 14px;color:var(--muted)">One place for all of Harry's mobile games. The 3D games are built for phones and run in the browser, so there's nothing to download. Install the site to your home screen and it works like an app.</p>
           <ul class="facts" id="facts"></ul>
         </div>
