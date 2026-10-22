@@ -394,6 +394,11 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .lb .empty-row { display: block; color: var(--muted); text-align: center; padding: 16px; }
 .lb li.empty-row::before { content: none; display: none; }
 .lbwhat { margin: 0; color: var(--muted); font-size: .9rem; }
+.myname { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--muted); font-size: .9rem; }
+.myname b { color: var(--ink); }
+.myname form { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0; flex: 1 1 auto; max-width: 420px; }
+.myname input { flex: 1 1 8em; width: auto; min-width: 0; }
+.myname .btn { padding: 5px 12px; }
 .lbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start; }
 @media (max-width: 400px) { .lbgrid { grid-template-columns: minmax(0, 1fr); } }
 .lbcard { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -492,6 +497,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         <button class="chip" type="button" data-p="all" aria-pressed="true">All time</button>
       </div>
       <p class="lbwhat" id="lbPeriodNote" style="margin:-4px 0 4px"></p>
+      <div class="myname" id="myName" hidden></div>
       <div class="lbgrid" id="lbAll"></div>
     </div>
   </div>
@@ -608,6 +614,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   const boardFail = {};
   const weekBoards = {}, weekFail = {};   // this week's scores, loaded when first shown
   let period = "all";
+  let editingName = false;
   const fmtN = (n) => Number(n).toLocaleString("en-GB");
   function scoreText(g, n) {
     const u = g.board && g.board.unit;
@@ -680,6 +687,43 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const name = (store("hh-name") || "").toLowerCase(), best = store("hh-sent-" + id);
     if (name && best) out.add(name + "|" + best);   // saved before this list existed
     return out;
+  }
+  // "Scores from this phone are saved as Sam · Change name" on the Leaderboards page.
+  function renderMyName() {
+    const box = $("myName"), name = store("hh-name");
+    box.hidden = !name || !API;
+    if (box.hidden) return;
+    const p = el("span"); p.append("Scores from this phone are saved as ", el("b", null, name), ".");
+    const ch = el("button", "btn", "Change name"); ch.type = "button";
+    ch.onclick = () => { editingName = true; nameForm(name); };
+    box.replaceChildren(p, ch);
+  }
+  function nameForm(old) {
+    const f = el("form"); f.noValidate = true;
+    const inp = el("input"); inp.type = "text"; inp.maxLength = 20; inp.value = old; inp.autocomplete = "nickname";
+    inp.setAttribute("aria-label", "Your name for the leaderboard");
+    const save = el("button", "btn primary", "Save"); save.type = "submit";
+    const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
+    const done = () => { editingName = false; renderMyName(); $("myName").querySelector("button").focus(); };
+    cancel.onclick = done;
+    f.onsubmit = (ev) => {
+      ev.preventDefault();
+      const name = inp.value.trim();
+      if (!name) { inp.focus(); return; }
+      if (/https?:\/\/|www\./i.test(name)) { toast("Names can't contain links."); return; }
+      // Scores saved under the old name stay yours, and the same scores under the new name count too
+      // (for when the old scores have been renamed on the leaderboard).
+      GAMES.forEach((g) => {
+        const mine = myScores(g.id), add = [];
+        mine.forEach((k) => { const i = k.lastIndexOf("|"); if (k.slice(0, i) === old.toLowerCase()) add.push(name.toLowerCase() + k.slice(i)); });
+        if (add.length) store("hh-mine-" + g.id, JSON.stringify([...mine, ...add].slice(-50)));
+      });
+      store("hh-name", name);
+      editingName = false; render(); done();
+      toast("Saved. Your next scores will go up as " + name + ".");
+    };
+    f.append(inp, save, cancel);
+    $("myName").replaceChildren(f); inp.focus(); inp.select();
   }
   function when(ts) {
     const d = new Date(ts); if (isNaN(d)) return "";
@@ -754,6 +798,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const li = el("li"); const tm = el("time", null, new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
       tm.dateTime = d; li.appendChild(tm); li.appendChild(el("span", null, t)); return li; }));
     document.querySelectorAll("#lbPeriod .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.p === period)));
+    if (!editingName) renderMyName();
     $("lbPeriodNote").textContent = period === "week" ? "Scores since Monday " + weekStart().toLocaleDateString("en-GB", { day: "numeric", month: "long" }) + ". Everyone starts fresh each Monday." : "The best scores ever.";
     $("lbAll").replaceChildren(...GAMES.filter((g) => g.board && isPlayable(g)).map((g) => {
       const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " leaderboard");
