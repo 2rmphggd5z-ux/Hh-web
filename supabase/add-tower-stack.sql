@@ -11,7 +11,7 @@ begin
     from pg_constraint
     where contype = 'c'
       and conrelid in ('public.reviews'::regclass, 'public.scores'::regclass, 'public.reports'::regclass)
-      and (pg_get_constraintdef(oid) like '%game_id%track-star-3d%' or pg_get_constraintdef(oid) like '%about%track-star-3d%')
+      and pg_get_constraintdef(oid) like '%= ANY%track-star-3d%'   -- only the "game is in this list" rules, not the score caps
   loop
     execute format('alter table %s drop constraint %I', c.tbl, c.conname);
   end loop;

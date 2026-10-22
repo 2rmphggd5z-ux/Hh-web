@@ -338,6 +338,9 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .sumcard img, .sumcard .sw { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; border: 2px solid var(--ink); }
 .sumcard div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .sumcard strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.revtools { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 14px; }
+.revtools label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; color: var(--muted); }
+.revtools select { width: auto; padding: 5px 10px; color: var(--ink); }
 .revlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .rev { background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
 .rev .rtop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
@@ -405,7 +408,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .lbhead { display: flex; gap: 14px; align-items: center; }
 .lbhead img { width: 84px; height: 63px; object-fit: cover; border-radius: 10px; border: 2px solid var(--ink); flex: none; }
 .lbhead div { min-width: 0; }
-.lbhead h2 { margin: 0 0 2px; font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
+.lbhead h2, .lbhead h3 { margin: 0 0 2px; font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
 .lbcard .btn { align-self: flex-start; }
 .helpbox { scroll-margin-top: calc(76px + env(safe-area-inset-top, 0px)); }
 .helpbox > p { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
@@ -459,6 +462,10 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
       <section aria-labelledby="dPlay">
         <h2 class="sh" id="dPlay">Jump in <small>Playable now</small></h2>
         <div class="grid" id="dashPlay"></div>
+      </section>
+      <section aria-labelledby="dTop" id="dashTopBox" hidden>
+        <h2 class="sh" id="dTop">Top scores <small><a href="#leaderboards" style="color:inherit">See all</a></small></h2>
+        <div class="lbgrid" id="dashTop"></div>
       </section>
 
       <section aria-labelledby="dRev">
@@ -533,6 +540,10 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         </div>
         <section aria-labelledby="hList">
           <h2 class="sh" id="hList">All reviews <small id="listCount"></small></h2>
+          <div class="revtools">
+            <label>Sort <select id="rSort"><option value="new">Newest first</option><option value="high">Highest rated</option><option value="low">Lowest rated</option></select></label>
+            <label>Show <select id="rStars"><option value="0">All ratings</option><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label>
+          </div>
           <ul class="revlist" id="revList"></ul>
         </section>
       </div>
@@ -665,13 +676,14 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const p = playsLine(g); if (p) w.appendChild(p);
     return w;
   }
-  function boardList(g, limit) {
+  function boardList(g, limit, per) {
+    per = per || period;
     const ol = el("ol", "lb");
-    const rows = (period === "week" ? weekBoards : boards)[g.id];
-    const failed = (period === "week" ? weekFail : boardFail)[g.id];
+    const rows = (per === "week" ? weekBoards : boards)[g.id];
+    const failed = (per === "week" ? weekFail : boardFail)[g.id];
     const mine = myScores(g.id);
     if (!rows) { const li = el("li", "empty-row", DB && !failed ? "Loading scores…" : "Leaderboards open soon."); ol.appendChild(li); return ol; }
-    if (!rows.length) { const li = el("li", "empty-row", period === "week" ? "No scores yet this week. Play now and take the top spot." : "No scores yet. Play now and set the first one."); ol.appendChild(li); return ol; }
+    if (!rows.length) { const li = el("li", "empty-row", per === "week" ? "No scores yet this week. Play now and take the top spot." : "No scores yet. Play now and set the first one."); ol.appendChild(li); return ol; }
     rows.slice(0, limit).forEach((r) => {
       const li = el("li"); if (mine.has(r.name.toLowerCase() + "|" + r.score)) li.className = "me";
       li.appendChild(el("span", "n", r.name)); li.appendChild(el("span", "s", scoreText(g, r.score)));
@@ -816,6 +828,15 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       $("sAvg").textContent = reviews.length ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : "–";
     }
     $("dashPlay").replaceChildren(...play.map(card));
+    const tops = play.filter((g) => g.board && boards[g.id] && boards[g.id].length);
+    $("dashTopBox").hidden = !tops.length;
+    $("dashTop").replaceChildren(...tops.map((g) => {
+      const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " top 3");
+      const head = el("div", "lbhead"); head.appendChild(coverImg(g, "84px"));
+      const t = el("div"); t.appendChild(el("h3", null, g.title)); t.appendChild(el("p", "lbwhat", g.board.what)); head.appendChild(t);
+      sec.appendChild(head); sec.appendChild(boardList(g, 3, "all"));
+      return sec;
+    }));
     $("nPlay").textContent = play.length + (play.length === 1 ? " game" : " games");
     $("nSoon").textContent = soon.length + (soon.length === 1 ? " game" : " games");
     $("gridPlay").replaceChildren(...play.map(card));
@@ -846,13 +867,16 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       sums.appendChild(b);
     });
     const list = $("revList");
-    const shown = revFilter === "all" ? reviews : reviews.filter((r) => r.game_id === revFilter);
+    const sort = $("rSort").value, onlyStars = +$("rStars").value;
+    const shown = reviews.filter((r) => (revFilter === "all" || r.game_id === revFilter) && (!onlyStars || r.rating === onlyStars));
+    if (sort !== "new") shown.sort((a, b) => (sort === "high" ? b.rating - a.rating : a.rating - b.rating) || String(b.created_at).localeCompare(String(a.created_at)));
     $("listCount").textContent = revState === "ready" ? shown.length + (shown.length === 1 ? " review" : " reviews") : "";
     $("hList").firstChild.textContent = revFilter === "all" ? "All reviews " : (byId[revFilter] ? byId[revFilter].title + " reviews " : "Reviews ");
     if (revState === "ready" && shown.length) list.replaceChildren(...shown.map((r) => reviewItem(r, revFilter === "all")));
     else list.replaceChildren(revState === "loading" ? revNote("Loading reviews", "Fetching the latest ratings.")
       : revState === "error" ? revNote("Reviews didn't load", "Check your connection and refresh the page.")
       : revState === "off" ? revNote("Reviews open soon", "Star ratings are on the way. Check back shortly.")
+      : onlyStars ? revNote("No " + onlyStars + "-star reviews", "Try showing all ratings.")
       : revNote("No reviews yet", "Be the first to rate " + (byId[revFilter] ? byId[revFilter].title : "a game") + "."));
 
     // about
@@ -871,6 +895,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   }
   function openDetail(g) {
     if ($("detail").hidden) detailOpener = document.activeElement;
+    if (location.hash !== "#game/" + g.id) history.replaceState(null, "", "#game/" + g.id);
     const sheet = el("div", "sheet");
     sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", g.title);
     const top = el("div"); top.style.position = "relative";
@@ -897,6 +922,9 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
         w.onclick = () => { closeDetail(true); revFilter = g.id; $("rGame").value = g.id; }; acts.appendChild(w);
       }
     } else acts.appendChild(el("p", "ctag", "Not playable yet. Check back soon."));
+    const sh = el("button", "btn", "Share"); sh.type = "button";
+    sh.onclick = () => share(isPlayable(g) ? "Play " + g.title + " free on HhGames!" : g.title + " is coming soon to HhGames.", SITE_URL + "#game/" + g.id);
+    acts.appendChild(sh);
     b.appendChild(acts);
     if (isPlayable(g) && revState === "ready") {
       const rs = reviews.filter((r) => r.game_id === g.id).slice(0, 3);
@@ -909,6 +937,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   function closeDetail(keepFocus) {
     if ($("detail").hidden) return;
     $("detail").hidden = true; $("detail").replaceChildren(); lockPage();
+    if (location.hash.startsWith("#game/")) history.replaceState(null, "", "#" + currentView);
     const back = detailOpener; detailOpener = null;
     if (!keepFocus && back && back.isConnected) back.focus();
   }
@@ -976,14 +1005,19 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   });
 
   // ---------- menu (one view at a time, linked by #dashboard, #games, #reviews, #about)
+  // A game's own link is #game/<id>: it opens the Games page with that game's sheet.
   const VIEWS = ["dashboard", "games", "leaderboards", "reviews", "about"];
+  let currentView = "dashboard";
   function show() {
-    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
+    const h = location.hash.slice(1), linked = /^game\/(.+)$/.exec(h), lg = linked && byId[decodeURIComponent(linked[1])];
+    const v = lg ? "games" : VIEWS.includes(h) ? h : "dashboard";
+    currentView = v;
     document.querySelectorAll(".view").forEach((s) => { s.hidden = s.dataset.view !== v; });
     document.querySelectorAll("a[data-view]").forEach((a) => { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     closeDetail(true);
     window.scrollTo(0, 0);
     if (v === "reviews") render();
+    if (lg) openDetail(lg);
   }
   window.addEventListener("hashchange", show);
 
@@ -1005,7 +1039,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const res = await fetch(DB + "?select=game_id,rating,name,comment,created_at&order=created_at.desc&limit=1000", { headers: headers() });
       if (!res.ok) throw new Error(res.status);
       reviews = clean(await res.json());
-      revState = reviews.length ? "ready" : "ready";
+      revState = "ready";
     } catch (e) { revState = "error"; }
     render();
   }
@@ -1027,6 +1061,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     $("pickhint").textContent = n ? n + " / 5 · " + LABEL[n] : "Tap a star";
   }
   GAMES.filter(isPlayable).forEach((g) => { const o = el("option", null, g.title); o.value = g.id; $("rGame").appendChild(o); });
+  $("rSort").addEventListener("change", render); $("rStars").addEventListener("change", render);
   $("rText").addEventListener("input", () => { $("rCount").textContent = $("rText").value.length + " / 500"; });
   function formErr(m) { const e = $("rErr"); e.textContent = m; e.hidden = !m; }
   function lockForm() {
@@ -1079,20 +1114,24 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }) })
       .then((r) => { if (r.ok && plays && g.id in plays) { plays[g.id]++; render(); } }).catch(() => {});
   }
-  async function loadBoard(id) {
+  // A game's leaderboard, all time or this week: one line per player, their best score.
+  async function loadScores(id, week) {
     if (!API) return;
+    const into = week ? weekBoards : boards, failed = week ? weekFail : boardFail;
+    const since = week ? "&created_at=gte." + encodeURIComponent(weekStart().toISOString()) : "";
     try {
-      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
+      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + since + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
       if (!res.ok) throw 0;
       const seen = new Set(), out = [];
       (await res.json()).forEach((r) => {
         const name = String(r.name || "").slice(0, 20).trim(), key = name.toLowerCase(), sc = Math.floor(+r.score);
-        if (!name || !(sc > 0) || seen.has(key)) return;   // one line per player: their best
+        if (!name || !(sc > 0) || seen.has(key)) return;
         seen.add(key); out.push({ name, score: sc });
       });
-      boards[id] = out; render();
-    } catch (e) { boardFail[id] = true; render(); }
+      into[id] = out; render();
+    } catch (e) { failed[id] = true; render(); }
   }
+  const loadBoard = (id) => loadScores(id, false), loadWeek = (id) => loadScores(id, true);
   function loadBoards() { GAMES.filter((g) => g.board && isPlayable(g)).forEach((g) => loadBoard(g.id)); }
   // Weeks start at midnight on Monday, UK time.
   function weekStart() {
@@ -1103,20 +1142,6 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const noon = Date.UTC(+v.year, +v.month - 1, +v.day - dow, 12);
     const londonHour = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "numeric", hourCycle: "h23" }).format(new Date(noon));
     return new Date(noon - 12 * 3600000 - (londonHour - 12) * 3600000);
-  }
-  async function loadWeek(id) {
-    if (!API) return;
-    try {
-      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + "&created_at=gte." + encodeURIComponent(weekStart().toISOString()) + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
-      if (!res.ok) throw 0;
-      const seen = new Set(), out = [];
-      (await res.json()).forEach((r) => {
-        const name = String(r.name || "").slice(0, 20).trim(), key = name.toLowerCase(), sc = Math.floor(+r.score);
-        if (!name || !(sc > 0) || seen.has(key)) return;
-        seen.add(key); out.push({ name, score: sc });
-      });
-      weekBoards[id] = out; render();
-    } catch (e) { weekFail[id] = true; render(); }
   }
   function loadWeeks() { GAMES.filter((g) => g.board && isPlayable(g)).forEach((g) => loadWeek(g.id)); }
   document.querySelectorAll("#lbPeriod .chip").forEach((c) => c.addEventListener("click", () => {
@@ -1165,7 +1190,9 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   async function shareScore(g, score) {
     const text = (g.board && g.board.unit === "blocks" ? "I built a tower " + scoreText(g, score) + " high" : "I scored " + scoreText(g, score))
       + " in " + g.title + " on HhGames! Can you beat it?";
-    const url = SITE_URL + "#leaderboards";
+    return share(text, SITE_URL + "#leaderboards");
+  }
+  async function share(text, url) {
     try {
       if (navigator.share) { await navigator.share({ title: "HhGames", text, url }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
@@ -1205,8 +1232,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const app = (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) ? " · home screen app" : "";
     return (os + " · " + br + " · " + screen.width + "×" + screen.height + app).slice(0, 120);
   }
-  const REPORTABLE = ["track-star-3d", "army-rush", "street-to-superstar", "quick-chaos", "darts-championship", "tower-stack"];   // must match the reports table
-  [["website", "The HhGames website"]].concat(GAMES.filter((g) => REPORTABLE.includes(g.id)).map((g) => [g.id, g.title])).forEach(([v, t]) => {
+  [["website", "The HhGames website"]].concat(GAMES.map((g) => [g.id, g.title])).forEach(([v, t]) => {
     const o = el("option", null, t); o.value = v; $("bAbout").appendChild(o); });
   $("bDevice").textContent = "Your report will include your device type so Harry can recreate the problem: " + deviceInfo() + ".";
   $("bMsg").addEventListener("input", () => { $("bCount").textContent = $("bMsg").value.length + " / 1000"; });
