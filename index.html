@@ -310,6 +310,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .sbody h3 { margin: 0; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .install { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 16px; border: 2px dashed var(--line); border-radius: 14px; color: var(--muted); font-size: .95rem; }
 .install b { color: var(--ink); }
+.inapp { margin-top: 16px; border-style: solid; border-color: var(--sticker); }
 .pbar .pbtns { display: flex; gap: 8px; flex: none; }
 
 /* Stars */
@@ -441,6 +442,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 </nav>
 
 <main>
+  <div class="wrap"><p class="install inapp" id="inapp" hidden></p></div>
   <!-- DASHBOARD -->
   <div class="view" id="view-dashboard" data-view="dashboard">
     <div class="wrap">
@@ -969,8 +971,20 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     st.classList.toggle("front", !!retry);
     st.replaceChildren(card); st.hidden = false;
   }
+  // Browsers built into apps (Snapchat, Instagram, TikTok…) can lose taps inside an embedded game,
+  // so there the game opens full page instead. Scores can't reach the leaderboard that way.
+  const IN_APP = (/Snapchat|Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|TikTok|Twitter|\bLine\//i.exec(navigator.userAgent) || [])[0];
+  if (IN_APP) {
+    const app = /snap/i.test(IN_APP) ? "Snapchat" : /insta/i.test(IN_APP) ? "Instagram" : /FB/i.test(IN_APP) ? "Facebook" : /musical|byte|tiktok/i.test(IN_APP) ? "TikTok" : "this app";
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const n = $("inapp");
+    n.append(el("b", null, "You're in " + app + "'s browser."), " Games open full page here, and scores can't go on the leaderboard. For everything to work, open HhGames in " + (ios ? "Safari" : "Chrome") + ": tap the ⋯ menu, then Open in " + (ios ? "Safari" : "browser") + ".");
+    n.hidden = false;
+    $("install").hidden = true;
+  }
   let pageScroll = 0;
   function openPlayer(g, opener) {
+    if (IN_APP) { countPlay(g); location.href = g.play; return; }
     // iPhone Safari can send taps to the wrong place inside a game shown over a scrolled page, so scroll to the top while playing.
     if (box.hidden) { pageScroll = window.scrollY; window.scrollTo(0, 0); }
     playing = g; playerOpener = opener || (box.hidden ? document.activeElement : playerOpener);
@@ -1122,7 +1136,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     if (!API) return;
     const k = "hh-played-" + g.id;
     try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); } catch (e) {}
-    fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }) })
+    fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }), keepalive: true })
       .then((r) => { if (r.ok && plays && g.id in plays) { plays[g.id]++; render(); } }).catch(() => {});
   }
   // A game's leaderboard, all time or this week: one line per player, their best score.
