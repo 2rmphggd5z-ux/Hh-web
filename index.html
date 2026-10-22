@@ -969,7 +969,10 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     st.classList.toggle("front", !!retry);
     st.replaceChildren(card); st.hidden = false;
   }
+  let pageScroll = 0;
   function openPlayer(g, opener) {
+    // iPhone Safari can send taps to the wrong place inside a game shown over a scrolled page, so scroll to the top while playing.
+    if (box.hidden) { pageScroll = window.scrollY; window.scrollTo(0, 0); }
     playing = g; playerOpener = opener || (box.hidden ? document.activeElement : playerOpener);
     hideStrip(); countPlay(g); clearTimeout(slowTimer);
     $("pstage").querySelectorAll("iframe").forEach((f) => f.remove());
@@ -997,6 +1000,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const wasFs = inFs();
     playing = null; hideStrip(); exitFs(); clearTimeout(slowTimer); playerState();
     $("pstage").querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; lockPage();
+    window.scrollTo(0, pageScroll);
     const back = playerOpener; playerOpener = null;
     const refocus = () => { if (back && back.isConnected) back.focus(); };
     if (!wasFs) return refocus();
