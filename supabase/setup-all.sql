@@ -5,7 +5,7 @@
 create table if not exists public.reviews (
   id uuid primary key default gen_random_uuid(),
   game_id text not null
-    check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship')),
+    check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack')),
   rating smallint not null check (rating between 1 and 5),
   name text not null check (char_length(btrim(name)) between 1 and 40),
   comment text not null default '' check (char_length(comment) <= 500),
@@ -39,7 +39,7 @@ grant insert (game_id, rating, name, comment) on public.reviews to anon, authent
 -- 2. Leaderboards -------------------------------------------------------------------
 create table if not exists public.scores (
   id uuid primary key default gen_random_uuid(),
-  game_id text not null check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'darts-championship')),
+  game_id text not null check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'darts-championship', 'tower-stack')),
   name text not null check (char_length(btrim(name)) between 1 and 20 and name !~* '(https?://|www\.)'),
   score integer not null check (score between 1 and 100000000),
   created_at timestamptz not null default now()
@@ -60,7 +60,7 @@ create table if not exists public.play_counts (
   game_id text primary key,
   plays bigint not null default 0
 );
-insert into public.play_counts (game_id) values ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('darts-championship')
+insert into public.play_counts (game_id) values ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('darts-championship'), ('tower-stack')
   on conflict (game_id) do nothing;
 
 alter table public.play_counts enable row level security;
@@ -84,7 +84,7 @@ grant execute on function public.count_play(text) to anon, authenticated;
 -- 4. Bug reports (private: read them in Table Editor → reports) --------------------
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
-  about text not null check (about in ('website', 'track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship')),
+  about text not null check (about in ('website', 'track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack')),
   message text not null check (char_length(btrim(message)) between 10 and 1000),
   name text not null default '' check (char_length(name) <= 40),
   device text not null default '' check (char_length(device) <= 120),

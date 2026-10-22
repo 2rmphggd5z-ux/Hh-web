@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Tower Stack</title>
+<meta name="description" content="Tap to drop each block. Line it up perfectly to keep your tower wide. How high can you build?">
+<meta name="theme-color" content="#1b1440">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tower Stack">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+:root {
+  --ink: #ffffff;
+  --muted: rgba(255, 255, 255, .72);
+  --panel: rgba(12, 10, 32, .58);
+  --sun: #ffc53d;
+  --font: "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1440; color: var(--ink); font-family: var(--font);
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+[hidden] { display: none !important; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hud { position: fixed; left: 0; right: 0; top: 0; pointer-events: none; text-align: center;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+#score { font-size: clamp(3.4rem, 15vw, 5.4rem); font-weight: 900; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .18); transition: transform .12s ease; }
+#score.pop { transform: scale(1.14); }
+#combo { margin-top: 6px; min-height: 1.5em; font-weight: 800; font-size: 1.05rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sun);
+  opacity: 0; transition: opacity .2s ease; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
+#combo.on { opacity: 1; }
+.iconbtn { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); right: max(14px, env(safe-area-inset-right, 0px));
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .18); color: #fff;
+  display: grid; place-items: center; cursor: pointer; z-index: 5; }
+.iconbtn svg { width: 22px; height: 22px; }
+.iconbtn:focus-visible, .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center; z-index: 4;
+  padding: 0 max(20px, env(safe-area-inset-right, 0px)) calc(48px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); cursor: pointer; }
+.title { font-size: clamp(2.6rem, 13vw, 4.4rem); font-weight: 900; font-style: italic; line-height: .92; letter-spacing: -.03em; margin: 0 0 6px;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, .22); }
+.title span { display: block; color: var(--sun); }
+.tagline { margin: 10px 0 0; color: var(--muted); font-size: 1.05rem; max-width: 26ch; line-height: 1.4; }
+.card { background: var(--panel); border: 2px solid rgba(255, 255, 255, .22); border-radius: 22px; padding: 20px 26px 22px; min-width: min(300px, 100%);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.label { font-size: .78rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.big { font-size: 4.2rem; font-weight: 900; line-height: 1; margin: 4px 0 10px; font-variant-numeric: tabular-nums; }
+.row { display: flex; justify-content: space-between; gap: 24px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .18); font-weight: 700; font-variant-numeric: tabular-nums; }
+.newbest { display: inline-block; background: var(--sun); color: #1b1440; font-weight: 900; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 999px; margin-bottom: 10px; transform: rotate(-3deg); }
+.btn { margin-top: 22px; border: 0; border-radius: 999px; padding: 15px 34px; font: inherit; font-weight: 900; font-size: 1.15rem; letter-spacing: .02em;
+  background: #fff; color: #1b1440; cursor: pointer; box-shadow: 0 5px 0 rgba(0, 0, 0, .25); }
+.hint { margin-top: 14px; color: var(--muted); font-size: .92rem; font-weight: 600; }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.05); } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } #score { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Tower Stack game"></canvas>
+<div class="hud" aria-live="polite"><div id="score" hidden>0</div><div id="combo"></div></div>
+<button class="iconbtn" id="sound" type="button" aria-label="Sound on"></button>
+
+<div class="screen" id="menu">
+  <h1 class="title">TOWER<span>STACK</span></h1>
+  <p class="tagline">Tap to drop each block. Line it up perfectly to keep your tower wide.</p>
+  <button class="btn pulse" type="button" id="startBtn">Tap to play</button>
+  <div class="hint" id="menuBest"></div>
+</div>
+
+<div class="screen" id="over" hidden>
+  <div class="card">
+    <div class="newbest" id="newBest" hidden>New best!</div>
+    <div class="label">Tower height</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="row"><span>Best</span><span id="bestScore">0</span></div>
+    <div class="row" style="border-top:0;padding-top:6px"><span>Perfect drops</span><span id="perfects">0</span></div>
+  </div>
+  <button class="btn" type="button" id="againBtn">Play again</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("c"), ctx = canvas.getContext("2d");
+
+  // ---------- saved settings
+  const SAVE_KEY = "tower-stack";
+  let save = { best: 0, sound: true, games: 0 };
+  try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}")); } catch (e) {}
+  if (!Number.isFinite(save.best) || save.best < 0) save.best = 0;
+  function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+  // ---------- world settings
+  const SIZE = 10;          // starting block width and depth
+  const SLAB = 1.6;         // block height
+  const RANGE = 13;         // how far a block slides either side
+  const PERFECT = 0.32;     // how close counts as a perfect drop
+  const GROW = 0.7;         // how much a perfect streak grows the block back
+
+  // ---------- sound (synthesised)
+  let AC = null, master = null;
+  function audio() {
+    if (AC) return AC;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = .5; master.connect(AC.destination); } catch (e) { AC = null; }
+    return AC;
+  }
+  function tone(freq, t, dur, type, vol) {
+    if (!AC || !save.sound) return;
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || .3, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+  }
+  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+  const sfx = {
+    place() { const t = AC.currentTime; tone(150, t, .12, "triangle", .35); tone(300, t, .06, "square", .05); },
+    perfect(n) { const t = AC.currentTime, f = 523.25 * Math.pow(2, SCALE[Math.min(n - 1, SCALE.length - 1)] / 12);
+      tone(f, t, .35, "sine", .28); tone(f * 2, t + .01, .2, "triangle", .08); },
+    grow() { const t = AC.currentTime; [0, 4, 7, 12].forEach((s, i) => tone(523.25 * Math.pow(2, s / 12), t + i * .05, .25, "triangle", .14)); },
+    over() { const t = AC.currentTime; [392, 330, 262, 196].forEach((f, i) => tone(f, t + i * .11, .3, "triangle", .22)); },
+  };
+  function play(name, n) { if (AC && save.sound) { if (AC.state === "suspended") AC.resume(); try { sfx[name](n); } catch (e) {} } }
+  function buzz(p) { try { if (save.sound && navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="m17 9 5 6M22 9l-5 6"/></svg>';
+  function syncSound() { $("sound").innerHTML = save.sound ? ICON_ON : ICON_OFF; $("sound").setAttribute("aria-label", save.sound ? "Sound on" : "Sound off"); }
+  $("sound").addEventListener("click", (e) => { e.stopPropagation(); save.sound = !save.sound; persist(); syncSound(); audio(); });
+  syncSound();
+
+  // ---------- game state
+  let state = "menu";       // menu | play | over
+  let stack, moving, debris, rings, axis, dir, speed, hue0, combo, perfects, camY, camTarget, overAt, shake;
+
+  function reset() {
+    hue0 = Math.floor(Math.random() * 360);
+    stack = [{ x: -SIZE / 2, z: -SIZE / 2, w: SIZE, d: SIZE, y: 0, hue: hue0 }];
+    debris = []; rings = []; combo = 0; perfects = 0; axis = "x"; shake = 0;
+    camY = camTarget = 0;
+    spawn();
+  }
+  function top() { return stack[stack.length - 1]; }
+  function hueAt(level) { return (hue0 + level * 7) % 360; }
+  function spawn() {
+    const t = top(), level = stack.length;
+    axis = level % 2 ? "x" : "z";
+    dir = level % 4 < 2 ? 1 : -1;
+    speed = Math.min(9 + level * 0.18, 20);
+    moving = { x: t.x, z: t.z, w: t.w, d: t.d, y: level * SLAB, hue: hueAt(level), t: 0 };
+    moving[axis] = t[axis] - dir * RANGE;
+    camTarget = Math.max(0, (level - 4) * SLAB);
+  }
+
+  function place() {
+    const t = top(), m = moving;
+    const len = axis === "x" ? "w" : "d";
+    const delta = m[axis] - t[axis];
+    const start = Math.max(m[axis], t[axis]);
+    const end = Math.min(m[axis] + m[len], t[axis] + t[len]);
+    const overlap = end - start;
+
+    if (overlap <= 0.05) {                       // missed the tower completely
+      debris.push(Object.assign({}, m, { vy: 0, front: delta > 0, alpha: 1 }));
+      moving = null;
+      return gameOver();
+    }
+
+    if (Math.abs(delta) <= PERFECT) {             // perfect drop
+      m[axis] = t[axis];
+      combo++; perfects++;
+      rings.push({ x: m.x, z: m.z, w: m.w, d: m.d, y: m.y + SLAB, life: 1 });
+      if (combo >= 3 && (m.w < SIZE || m.d < SIZE)) {
+        const g = Math.min(GROW, SIZE - m[len]);
+        m[len] += g; m[axis] -= g / 2;
+        play("grow");
+      } else play("perfect", combo);
+      buzz(15);
+      showCombo();
+    } else {                                      // slice off the overhang
+      combo = 0; showCombo();
+      const piece = { y: m.y, hue: m.hue, vy: 0, alpha: 1, front: delta > 0 };
+      const other = axis === "x" ? "z" : "x", olen = axis === "x" ? "d" : "w";
+      piece[other] = m[other]; piece[olen] = m[olen];
+      if (delta > 0) { piece[axis] = end; piece[len] = m[axis] + m[len] - end; }
+      else { piece[axis] = m[axis]; piece[len] = start - m[axis]; }
+      debris.push(piece);
+      m[axis] = start; m[len] = overlap;
+      play("place"); buzz(8);
+    }
+    delete m.t;
+    stack.push(m);
+    setScore(stack.length - 1, true);
+    spawn();
+  }
+
+  function setScore(n, pop) {
+    const el = $("score"); el.textContent = n;
+    if (pop) { el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); setTimeout(() => el.classList.remove("pop"), 120); }
+  }
+  function showCombo() {
+    const c = $("combo");
+    if (combo >= 2) { c.textContent = "Perfect ×" + combo; c.classList.add("on"); }
+    else if (combo === 1) { c.textContent = "Perfect!"; c.classList.add("on"); }
+    else c.classList.remove("on");
+  }
+
+  function start() {
+    audio(); if (AC && AC.state === "suspended") AC.resume();
+    reset();
+    state = "play";
+    $("menu").hidden = true; $("over").hidden = true; $("score").hidden = false;
+    setScore(0); showCombo();
+  }
+
+  function gameOver() {
+    state = "over"; overAt = performance.now(); shake = 1;
+    const score = stack.length - 1;
+    const isBest = score > save.best;
+    if (isBest) save.best = score;
+    save.games = (save.games || 0) + 1; persist();
+    play("over"); buzz([40, 60, 90]);
+    $("combo").classList.remove("on");
+    setTimeout(() => {
+      if (state !== "over") return;
+      $("finalScore").textContent = score;
+      $("bestScore").textContent = save.best;
+      $("perfects").textContent = perfects;
+      $("newBest").hidden = !(isBest && score > 0);
+      $("score").hidden = true;
+      $("over").hidden = false;
+      $("againBtn").focus({ preventScroll: true });
+    }, 900);
+    // When played inside HhGames, offer the score for its leaderboard.
+    if (score > 0) { try { if (window.parent !== window) window.parent.postMessage({ type: "hh-score", game: "tower-stack", score: score }, "*"); } catch (e) {} }
+  }
+
+  // ---------- input
+  function tap(e) {
+    if (e && e.target && e.target.closest && e.target.closest("#sound")) return;
+    if (state === "play") { if (moving) place(); }
+    else if (state === "menu") start();
+    else if (state === "over" && performance.now() - overAt > 1300) start();
+  }
+  window.addEventListener("pointerdown", (e) => { if (e.button > 0) return; e.preventDefault(); tap(e); }, { passive: false });
+  window.addEventListener("keydown", (e) => {
+    if (e.repeat) return;
+    if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); tap(e); }
+  });
+  ["startBtn", "againBtn"].forEach((id) => $(id).addEventListener("click", (e) => e.preventDefault()));
+
+  // ---------- drawing (isometric)
+  let W = 0, H = 0, DPR = 1, unit = 10;
+  const C = Math.cos(Math.PI / 6), S = Math.sin(Math.PI / 6);
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    unit = Math.min(W * 0.62, H * 0.5) / (SIZE * 2 * C);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function anchorY() { return H * (state === "menu" ? 0.42 : 0.6); }
+  function proj(x, y, z) {
+    return [W / 2 + (x - z) * C * unit, anchorY() + ((x + z) * S - (y - camY)) * unit];
+  }
+  function hsl(h, s, l, a) { return "hsla(" + h + "," + s + "%," + l + "%," + (a == null ? 1 : a) + ")"; }
+  function poly(pts, fill) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
+  function box(b, y0, y1, alpha) {
+    const x0 = b.x, x1 = b.x + b.w, z0 = b.z, z1 = b.z + b.d, a = alpha == null ? 1 : alpha;
+    const topY = proj(x0, y1, z0)[1];
+    if (proj(x1, y0, z1)[1] < -40 || topY > H + 40) return;     // off screen
+    poly([proj(x1, y1, z0), proj(x1, y1, z1), proj(x1, y0, z1), proj(x1, y0, z0)], hsl(b.hue, 58, 47, a));   // right side
+    poly([proj(x0, y1, z1), proj(x1, y1, z1), proj(x1, y0, z1), proj(x0, y0, z1)], hsl(b.hue, 55, 38, a));   // left side
+    poly([proj(x0, y1, z0), proj(x1, y1, z0), proj(x1, y1, z1), proj(x0, y1, z1)], hsl(b.hue, 70, 64, a));   // top
+  }
+
+  function background() {
+    const h = stack ? hueAt(stack.length) : (hue0 || 260);
+    const bg = 245 + 40 * Math.sin(h * Math.PI / 180);          // stays in the blue-to-purple range
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, hsl(bg, 55, 13));
+    g.addColorStop(1, hsl(bg - 25, 50, 30));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  // A dashed line at the height of your best tower, so you can see it coming.
+  const LABEL_FONT = "800 12px " + getComputedStyle(document.body).fontFamily;
+  function bestLine() {
+    if (!save.best || state === "menu") return;
+    const y = proj(0, save.best * SLAB + SLAB, 0)[1];      // top face of your best block, at the tower's centre line
+    if (y < 30 || y > H - 30) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = LABEL_FONT; ctx.textBaseline = "bottom";
+    ctx.fillText("BEST " + save.best, 16, y - 4);
+    ctx.restore();
+  }
+
+  // ---------- loop
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 1 / 20); last = now;
+
+    if (state === "play" && moving) {
+      moving[axis] += dir * speed * dt;
+      const t = top();
+      if (moving[axis] > t[axis] + RANGE) { moving[axis] = t[axis] + RANGE; dir = -1; }
+      if (moving[axis] < t[axis] - RANGE) { moving[axis] = t[axis] - RANGE; dir = 1; }
+    }
+    if (state === "menu" && stack) {           // slow attract loop: the tower builds itself
+      camTarget = Math.max(0, (stack.length - 4) * SLAB);
+    }
+    camY += (camTarget - camY) * Math.min(1, dt * 6);
+    debris.forEach((p) => { p.vy += 32 * dt; p.y -= p.vy * dt; p.alpha = Math.max(0, p.alpha - dt * .7); });
+    debris = debris.filter((p) => p.alpha > 0 && p.y > camY - 60);
+    rings.forEach((r) => { r.life -= dt * 2.2; });
+    rings = rings.filter((r) => r.life > 0);
+    if (state === "over") { camTarget = Math.max(0, (stack.length - 4) * SLAB); shake = Math.max(0, shake - dt * 3); }
+
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    background();
+    if (shake) { ctx.save(); ctx.translate((Math.random() - .5) * 10 * shake, (Math.random() - .5) * 10 * shake); }
+    bestLine();
+    if (stack) {
+      debris.filter((p) => !p.front).forEach((p) => box(p, p.y, p.y + SLAB, p.alpha));
+      const base = stack[0];
+      box({ x: base.x, z: base.z, w: base.w, d: base.d, hue: base.hue }, camY - 80, 0, 1);   // the pillar under the tower
+      for (let i = 1; i < stack.length; i++) box(stack[i], stack[i].y, stack[i].y + SLAB);
+      if (moving && state === "play") box(moving, moving.y, moving.y + SLAB);
+      rings.forEach((r) => {
+        const k = 1 + (1 - r.life) * .35, cx = r.x + r.w / 2, cz = r.z + r.d / 2, hw = r.w / 2 * k, hd = r.d / 2 * k;
+        const pts = [proj(cx - hw, r.y, cz - hd), proj(cx + hw, r.y, cz - hd), proj(cx + hw, r.y, cz + hd), proj(cx - hw, r.y, cz + hd)];
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach((p) => ctx.lineTo(p[0], p[1])); ctx.closePath();
+        ctx.strokeStyle = "rgba(255,255,255," + r.life.toFixed(3) + ")"; ctx.lineWidth = 3; ctx.stroke();
+      });
+      debris.filter((p) => p.front).forEach((p) => box(p, p.y, p.y + SLAB, p.alpha));
+    }
+    if (shake) ctx.restore();
+    requestAnimationFrame(frame);
+  }
+
+  // Menu: show a starter tower behind the title.
+  function menuTower() {
+    hue0 = Math.floor(Math.random() * 360);
+    stack = [{ x: -SIZE / 2, z: -SIZE / 2, w: SIZE, d: SIZE, y: 0, hue: hue0 }];
+    let x = -SIZE / 2, z = -SIZE / 2, w = SIZE, d = SIZE;
+    for (let i = 1; i <= 5; i++) {
+      if (i % 2) { const cut = i === 3 ? 1.6 : 0; w -= cut; }
+      else { const cut = i === 4 ? 1.2 : 0; d -= cut; }
+      stack.push({ x, z, w, d, y: i * SLAB, hue: hueAt(i) });
+    }
+    debris = []; rings = []; moving = null; camY = camTarget = 0;
+  }
+  menuTower();
+  $("menuBest").textContent = save.best ? "Best: " + save.best + (save.best === 1 ? " block" : " blocks") : "Tap anywhere to start";
+  document.addEventListener("visibilitychange", () => { last = performance.now(); });
+  requestAnimationFrame(frame);
+
+  // For automated checks: the slicing maths.
+  window.__towerStack = {
+    get state() { return state; }, get height() { return stack ? stack.length - 1 : 0; },
+    get top() { const t = top(); return { w: +t.w.toFixed(3), d: +t.d.toFixed(3) }; }, get combo() { return combo; },
+    nudge(off) { if (moving) moving[axis] = top()[axis] + off; }, place: () => tap(), start,
+  };
+})();
+</script>
+</body>
+</html>

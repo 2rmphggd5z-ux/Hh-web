@@ -133,8 +133,8 @@ details summary { cursor: pointer; font-weight: 800; margin: 22px 0 10px; }
 <div class="toast" id="toast" hidden role="status"></div>
 <script>
 const SB = { url: "https://mwlnnyjdnyorqrqgauny.supabase.co", key: "sb_publishable_UVwCZhYIxuXzhfC7uebIPg_6JY0o6TN" };
-const TITLES = {"track-star-3d": "Track Star 3D", "army-rush": "Army Rush", "street-to-superstar": "Street to Superstar", "quick-chaos": "Quick Chaos", "darts-championship": "Darts Champion", "website": "The website"};
-const BOARDS = [{"id": "track-star-3d", "title": "Track Star 3D", "unit": "pts"}, {"id": "army-rush", "title": "Army Rush", "unit": "level"}, {"id": "street-to-superstar", "title": "Street to Superstar", "unit": "pts"}, {"id": "darts-championship", "title": "Darts Champion", "unit": "pts"}];
+const TITLES = {"tower-stack": "Tower Stack", "track-star-3d": "Track Star 3D", "army-rush": "Army Rush", "street-to-superstar": "Street to Superstar", "quick-chaos": "Quick Chaos", "darts-championship": "Darts Champion", "website": "The website"};
+const BOARDS = [{"id": "tower-stack", "title": "Tower Stack", "unit": "blocks"}, {"id": "track-star-3d", "title": "Track Star 3D", "unit": "pts"}, {"id": "army-rush", "title": "Army Rush", "unit": "level"}, {"id": "street-to-superstar", "title": "Street to Superstar", "unit": "pts"}, {"id": "darts-championship", "title": "Darts Champion", "unit": "pts"}];
 (function () {
   const $ = (id) => document.getElementById(id);
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -283,7 +283,7 @@ const BOARDS = [{"id": "track-star-3d", "title": "Track Star 3D", "unit": "pts"}
       const row = el("div", "row");
       row.appendChild(el("span", "rank", String(i + 1)));
       const n = el("span", "n", s.name); n.title = when(s.created_at); row.appendChild(n);
-      row.appendChild(el("span", "s", g && g.unit === "level" ? "Level " + s.score : Number(s.score).toLocaleString("en-GB")));
+      row.appendChild(el("span", "s", g && g.unit === "level" ? "Level " + s.score : g && g.unit === "blocks" ? s.score + (s.score === 1 ? " block" : " blocks") : Number(s.score).toLocaleString("en-GB")));
       row.appendChild(confirmBtn("Delete", async () => {
         await api("scores?id=eq." + s.id, { method: "DELETE", prefer: "return=minimal" }); scores = scores.filter((x) => x !== s); renderScores(); toast("Score removed."); }));
       return row;
