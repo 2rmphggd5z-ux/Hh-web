@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HhGames</title>
-<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Track Star 3D and Army Rush, and rate them out of 5 stars.">
+<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Track Star 3D, Army Rush, Street to Superstar and Darts Champion, climb the leaderboards and rate each game out of 5 stars.">
 <meta name="author" content="Harry Davies">
 <meta name="theme-color" content="#2f4bff">
 <link rel="manifest" href="manifest.webmanifest">
@@ -439,7 +439,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
             </div>
           </div>
           <div class="board" aria-label="Scoreboard">
-            <div><b id="sGames">00</b><span>Games</span></div>
+            <div><b id="sGames">–</b><span>Games</span></div>
             <div><b id="sPlays">–</b><span>Plays</span></div>
             <div><b id="sRevs">–</b><span>Reviews</span></div>
             <div><b id="sAvg">–</b><span>Avg ★</span></div>
@@ -656,15 +656,24 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const ol = el("ol", "lb");
     const rows = (period === "week" ? weekBoards : boards)[g.id];
     const failed = (period === "week" ? weekFail : boardFail)[g.id];
-    const mine = (store("hh-name") || "").toLowerCase();
+    const mine = myScores(g.id);
     if (!rows) { const li = el("li", "empty-row", DB && !failed ? "Loading scores…" : "Leaderboards open soon."); ol.appendChild(li); return ol; }
     if (!rows.length) { const li = el("li", "empty-row", period === "week" ? "No scores yet this week. Play now and take the top spot." : "No scores yet. Play now and set the first one."); ol.appendChild(li); return ol; }
     rows.slice(0, limit).forEach((r) => {
-      const li = el("li"); if (mine && r.name.toLowerCase() === mine) li.className = "me";
+      const li = el("li"); if (mine.has(r.name.toLowerCase() + "|" + r.score)) li.className = "me";
       li.appendChild(el("span", "n", r.name)); li.appendChild(el("span", "s", scoreText(g, r.score)));
       ol.appendChild(li);
     });
     return ol;
+  }
+  // Scores this device has saved, as "name|score", so only your own rows are highlighted.
+  function myScores(id) {
+    let list = [];
+    try { list = JSON.parse(store("hh-mine-" + id) || "[]"); } catch (e) {}
+    const out = new Set(Array.isArray(list) ? list : []);
+    const name = (store("hh-name") || "").toLowerCase(), best = store("hh-sent-" + id);
+    if (name && best) out.add(name + "|" + best);   // saved before this list existed
+    return out;
   }
   function when(ts) {
     const d = new Date(ts); if (isNaN(d)) return "";
@@ -725,7 +734,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   // ---------- render
   function render() {
     const play = GAMES.filter(isPlayable), soon = GAMES.filter((g) => !isPlayable(g));
-    $("sGames").textContent = String(GAMES.length).padStart(2, "0");
+    $("sGames").textContent = String(GAMES.length);
     if (plays) $("sPlays").textContent = fmtN(Object.values(plays).reduce((a, n) => a + n, 0));
     $("news").replaceChildren(...NEWS.slice(0, 5).map(([d, t]) => {
       const li = el("li"); const tm = el("time", null, new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
@@ -744,7 +753,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       return sec;
     }));
     if (revState === "ready") {
-      $("sRevs").textContent = String(reviews.length).padStart(2, "0");
+      $("sRevs").textContent = String(reviews.length);
       $("sAvg").textContent = reviews.length ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : "–";
     }
     $("dashPlay").replaceChildren(...play.map(card));
@@ -1015,9 +1024,18 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   async function postScore(g, score, name) {
     const res = await fetch(API + "/scores", { method: "POST", headers: headers({ Prefer: "return=minimal" }),
       body: JSON.stringify({ game_id: g.id, name, score }) });
-    if (!res.ok) throw new Error(res.status);
+    if (!res.ok) { let m = ""; try { m = (await res.json()).message || ""; } catch (e) {} throw new Error(m || res.status); }
+    const mine = [...myScores(g.id), name.toLowerCase() + "|" + score].slice(-50);   // before hh-sent changes
+    store("hh-mine-" + g.id, JSON.stringify(mine));
     store("hh-sent-" + g.id, String(score));
     loadBoard(g.id); if (Object.keys(weekBoards).length) loadWeek(g.id);
+  }
+  function scoreErr(e) {
+    const m = String(e && e.message || "");
+    if (m.includes("name_not_allowed")) return "That name isn't allowed on the leaderboard. Try a different one.";
+    if (m.includes("too_many_scores")) return "Lots of scores saved just now. Wait a few minutes and try again.";
+    if (m.includes("scores_max_check")) return "That score couldn't be added to the leaderboard.";
+    return "Your score didn't save. Check your connection.";
   }
   function offerScore(g, score) {
     strip.replaceChildren();
@@ -1035,7 +1053,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       if (/https?:\/\/|www\./i.test(name)) { toast("Names can't contain links."); return; }
       save.disabled = true; save.textContent = "Saving…";
       try { await postScore(g, score, name); store("hh-name", name); store("hh-auto", "1"); offerShare(g, score); }
-      catch (e) { save.disabled = false; save.textContent = "Try again"; toast("Your score didn't save. Check your connection."); }
+      catch (e) { save.disabled = false; save.textContent = "Try again"; toast(scoreErr(e)); if (/name_not_allowed/.test(e.message)) inp.select(); }
     };
     strip.appendChild(f); strip.hidden = false;
   }
@@ -1069,7 +1087,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     if (score <= best) return;                       // only offer new personal bests
     const g = playing, name = store("hh-name");
     if (name && store("hh-auto") === "1") {           // already added a score before: save without asking
-      postScore(g, score, name).then(() => offerShare(g, score)).catch(() => offerScore(g, score));
+      postScore(g, score, name).then(() => offerShare(g, score)).catch((e) => { offerScore(g, score); toast(scoreErr(e)); });
     } else offerScore(g, score);
   });
 
