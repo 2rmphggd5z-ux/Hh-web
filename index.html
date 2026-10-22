@@ -311,6 +311,10 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .install { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 16px; border: 2px dashed var(--line); border-radius: 14px; color: var(--muted); font-size: .95rem; }
 .install b { color: var(--ink); }
 .inapp { margin-top: 16px; border-style: solid; border-color: var(--sticker); }
+/* A best that never reached the leaderboard: asked about in a bar pinned above the bottom of the screen */
+.catchup { position: fixed; z-index: 19; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 24px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); border: 2px solid var(--ink); border-radius: 14px; padding: 10px 12px; box-shadow: 4px 4px 0 var(--ink); }
+@media (max-width: 719px) { .catchup { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
 .pbar .pbtns { display: flex; gap: 8px; flex: none; }
 
 /* Stars */
@@ -613,6 +617,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
   <div class="scorestrip" id="strip" hidden></div>
   <div class="pstage" id="pstage"><div class="pstate" id="pstate" role="status" hidden></div></div>
 </div>
+<div class="scorestrip catchup" id="catchup" role="status" hidden></div>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
@@ -971,6 +976,16 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     st.classList.toggle("front", !!retry);
     st.replaceChildren(card); st.hidden = false;
   }
+  // Where each game on HhGames keeps its own best on the phone (see catch-up below).
+  const LOCAL_BEST = {
+    "tower-stack": ["tower-stack", (d) => d.best],
+    "street-to-superstar": ["street-to-superstar-v1", (d) => d.rec && d.rec.best60],
+    "darts-championship": ["dartsChampion.v1", (d) => d.stats && d.stats.highestVisit],
+  };
+  function localBest(id) {
+    const src = LOCAL_BEST[id]; if (!src) return 0;
+    try { const v = Math.floor(Number(src[1](JSON.parse(store(src[0]) || "{}")))); return v > 0 && v <= 100000000 ? v : 0; } catch (e) { return 0; }
+  }
   // Browsers built into apps (Snapchat, Instagram, TikTok…) can lose taps inside an embedded game,
   // so there the game opens full page instead. Scores can't reach the leaderboard that way.
   const IN_APP = (/Snapchat|Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|TikTok|Twitter|\bLine\//i.exec(navigator.userAgent) || [])[0];
@@ -978,7 +993,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const app = /snap/i.test(IN_APP) ? "Snapchat" : /insta/i.test(IN_APP) ? "Instagram" : /FB/i.test(IN_APP) ? "Facebook" : /musical|byte|tiktok/i.test(IN_APP) ? "TikTok" : "this app";
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const n = $("inapp");
-    n.append(el("b", null, "You're in " + app + "'s browser."), " Games open full page here, and scores can't go on the leaderboard. For everything to work, open HhGames in " + (ios ? "Safari" : "Chrome") + ": tap the ⋯ menu, then Open in " + (ios ? "Safari" : "browser") + ".");
+    n.append(el("b", null, "You're in " + app + "'s browser."), " Games open full page here. When you come back, new bests from " + GAMES.filter((g) => g.board && LOCAL_BEST[g.id]).map((g) => g.title).join(", ").replace(/, ([^,]*)$/, " and $1") + " are added to the leaderboard, but other games' scores can't be. For everything to work, open HhGames in " + (ios ? "Safari" : "Chrome") + ": tap the ⋯ menu, then Open in " + (ios ? "Safari" : "browser") + ".");
     n.hidden = false;
     $("install").hidden = true;
   }
@@ -1015,6 +1030,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     playing = null; hideStrip(); exitFs(); clearTimeout(slowTimer); playerState();
     $("pstage").querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; lockPage();
     window.scrollTo(0, pageScroll);
+    catchUp();
     const back = playerOpener; playerOpener = null;
     const refocus = () => { if (back && back.isConnected) back.focus(); };
     if (!wasFs) return refocus();
@@ -1174,8 +1190,13 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
 
   // New best from a game: it sends {type: "hh-score", game, score} to this page when a run ends.
   const strip = $("strip");
-  function hideStrip() { strip.hidden = true; strip.replaceChildren(); }
+  function hideStrip(into) { into = into || strip; into.hidden = true; into.replaceChildren(); }
+  const posting = new Set();   // games with a score being saved right now
   async function postScore(g, score, name) {
+    posting.add(g.id);
+    try { await sendScore(g, score, name); } finally { posting.delete(g.id); }
+  }
+  async function sendScore(g, score, name) {
     const res = await fetch(API + "/scores", { method: "POST", headers: headers({ Prefer: "return=minimal" }),
       body: JSON.stringify({ game_id: g.id, name, score }) });
     if (!res.ok) { let m = ""; try { m = (await res.json()).message || ""; } catch (e) {} throw new Error(m || res.status); }
@@ -1191,14 +1212,16 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     if (m.includes("scores_max_check")) return "That score couldn't be added to the leaderboard.";
     return "Your score didn't save. Check your connection.";
   }
-  function offerScore(g, score) {
+  function offerScore(g, score, into) {
+    const strip = into || $("strip");
     strip.replaceChildren();
-    strip.appendChild(el("b", null, "New best: " + scoreText(g, score) + "! Add it to the leaderboard?"));
+    strip.appendChild(el("b", null, "New " + g.title + " best: " + scoreText(g, score) + "! Add it to the leaderboard?"));
     const f = el("form"); f.noValidate = true;
-    const inp = el("input"); inp.type = "text"; inp.maxLength = 20; inp.placeholder = "Your name"; inp.id = "lbName";
+    const inp = el("input"); inp.type = "text"; inp.maxLength = 20; inp.placeholder = "Your name";
     inp.setAttribute("aria-label", "Your name for the leaderboard"); inp.value = store("hh-name") || "";
     const save = el("button", null, "Add me"); save.type = "submit"; save.setAttribute("aria-label", "Add to leaderboard");
-    const no = el("button", "ghost", "✕"); no.type = "button"; no.setAttribute("aria-label", "Not now"); no.onclick = hideStrip;
+    const no = el("button", "ghost", "✕"); no.type = "button"; no.setAttribute("aria-label", "Not now");
+    no.onclick = () => { store("hh-skip-" + g.id, String(score)); hideStrip(strip); };   // don't ask about this score again
     f.appendChild(inp); f.appendChild(save); f.appendChild(no);
     f.onsubmit = async (ev) => {
       ev.preventDefault();
@@ -1206,7 +1229,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       if (!name) { inp.focus(); return; }
       if (/https?:\/\/|www\./i.test(name)) { toast("Names can't contain links."); return; }
       save.disabled = true; save.textContent = "Saving…";
-      try { await postScore(g, score, name); store("hh-name", name); store("hh-auto", "1"); offerShare(g, score); }
+      try { await postScore(g, score, name); store("hh-name", name); store("hh-auto", "1"); offerShare(g, score, strip); catchUp(); }
       catch (e) { save.disabled = false; save.textContent = "Try again"; toast(scoreErr(e)); if (/name_not_allowed/.test(e.message)) inp.select(); }
     };
     strip.appendChild(f); strip.hidden = false;
@@ -1224,12 +1247,13 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     try { await navigator.clipboard.writeText(text + " " + url); toast("Copied! Paste it to your friends."); }
     catch (e) { toast("Couldn't share from this browser."); }
   }
-  function offerShare(g, score) {
+  function offerShare(g, score, into) {
+    const strip = into || $("strip");
     strip.replaceChildren();
     strip.appendChild(el("b", null, "You're on the " + g.title + " leaderboard with " + scoreText(g, score) + "!"));
     const row = el("div", "sharerow");
     const sh = el("button", null, "Share my score"); sh.type = "button"; sh.onclick = () => shareScore(g, score);
-    const no = el("button", "ghost", "✕"); no.type = "button"; no.setAttribute("aria-label", "Close"); no.onclick = hideStrip;
+    const no = el("button", "ghost", "✕"); no.type = "button"; no.setAttribute("aria-label", "Close"); no.onclick = () => hideStrip(strip);
     row.appendChild(sh); row.appendChild(no);
     strip.appendChild(row); strip.hidden = false;
   }
@@ -1246,6 +1270,28 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       postScore(g, score, name).then(() => offerShare(g, score)).catch((e) => { offerScore(g, score); toast(scoreErr(e)); });
     } else offerScore(g, score);
   });
+
+  // Catch-up: the games on HhGames keep their own best on the phone. A best that never reached the leaderboard
+  // (played from a direct link, full page in an app's browser, or a save that failed) is added when the site opens.
+  let catchingUp = false;
+  async function catchUp() {
+    if (!API || catchingUp || !box.hidden || !$("catchup").hidden) return;
+    const todo = GAMES.filter((g) => g.board && isPlayable(g) && !posting.has(g.id)).map((g) => [g, localBest(g.id)])
+      .filter(([g, n]) => n > Number(store("hh-sent-" + g.id) || 0) && n > Number(store("hh-skip-" + g.id) || 0));
+    if (!todo.length) return;
+    const name = store("hh-name");
+    if (!(name && store("hh-auto") === "1")) return offerScore(todo[0][0], todo[0][1], $("catchup"));
+    catchingUp = true;
+    const added = [];
+    for (const [g, n] of todo) {
+      try { await postScore(g, n, name); added.push(g.title + " (" + scoreText(g, n) + ")"); }
+      catch (e) { offerScore(g, n, $("catchup")); toast(scoreErr(e)); break; }
+    }
+    catchingUp = false;
+    if (added.length) toast("Added your best to the leaderboard: " + added.join(", ") + ".");
+  }
+  window.addEventListener("pageshow", (e) => { if (e.persisted) catchUp(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) catchUp(); });
 
   // ---------- bug reports (About → Help)
   function deviceInfo() {
@@ -1300,6 +1346,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   loadReviews();
   loadPlays();
   loadBoards();
+  catchUp();
 })();
 </script>
 </body>
