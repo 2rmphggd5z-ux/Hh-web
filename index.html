@@ -237,8 +237,11 @@ legend { font-weight: 600; font-size: .9rem; padding: 0; margin-bottom: 6px; }
   padding: 4px 14px; font-weight: 800; cursor: pointer; flex: none;
 }
 .pstage { flex: 1; position: relative; min-height: 0; }
-.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: #000; }
-.pstate { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: transparent; z-index: 1; }
+/* "Loading…" sits behind the game, so the game shows as soon as it draws, even if the browser never reports it loaded.
+   Messages with buttons go in front. */
+.pstate { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.pstate.front { z-index: 2; }
 .pstate b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin-bottom: 6px; }
 .pstate p { margin: 0 auto 16px; max-width: 36ch; color: #9ea3c6; }
 .pstate .actions { justify-content: center; }
@@ -307,6 +310,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .sbody h3 { margin: 0; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .install { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 16px; border: 2px dashed var(--line); border-radius: 14px; color: var(--muted); font-size: .95rem; }
 .install b { color: var(--ink); }
+.inapp { margin-top: 16px; border-style: solid; border-color: var(--sticker); }
 .pbar .pbtns { display: flex; gap: 8px; flex: none; }
 
 /* Stars */
@@ -438,6 +442,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 </nav>
 
 <main>
+  <div class="wrap"><p class="install inapp" id="inapp" hidden></p></div>
   <!-- DASHBOARD -->
   <div class="view" id="view-dashboard" data-view="dashboard">
     <div class="wrap">
@@ -963,9 +968,25 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const tab = el("a", "btn", "Open in a new tab"); tab.href = playing.play; tab.target = "_blank"; tab.rel = "noopener";
       row.appendChild(again); row.appendChild(tab); card.appendChild(row);
     }
+    st.classList.toggle("front", !!retry);
     st.replaceChildren(card); st.hidden = false;
   }
+  // Browsers built into apps (Snapchat, Instagram, TikTok…) can lose taps inside an embedded game,
+  // so there the game opens full page instead. Scores can't reach the leaderboard that way.
+  const IN_APP = (/Snapchat|Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|TikTok|Twitter|\bLine\//i.exec(navigator.userAgent) || [])[0];
+  if (IN_APP) {
+    const app = /snap/i.test(IN_APP) ? "Snapchat" : /insta/i.test(IN_APP) ? "Instagram" : /FB/i.test(IN_APP) ? "Facebook" : /musical|byte|tiktok/i.test(IN_APP) ? "TikTok" : "this app";
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const n = $("inapp");
+    n.append(el("b", null, "You're in " + app + "'s browser."), " Games open full page here, and scores can't go on the leaderboard. For everything to work, open HhGames in " + (ios ? "Safari" : "Chrome") + ": tap the ⋯ menu, then Open in " + (ios ? "Safari" : "browser") + ".");
+    n.hidden = false;
+    $("install").hidden = true;
+  }
+  let pageScroll = 0;
   function openPlayer(g, opener) {
+    if (IN_APP) { countPlay(g); location.href = g.play; return; }
+    // iPhone Safari can send taps to the wrong place inside a game shown over a scrolled page, so scroll to the top while playing.
+    if (box.hidden) { pageScroll = window.scrollY; window.scrollTo(0, 0); }
     playing = g; playerOpener = opener || (box.hidden ? document.activeElement : playerOpener);
     hideStrip(); countPlay(g); clearTimeout(slowTimer);
     $("pstage").querySelectorAll("iframe").forEach((f) => f.remove());
@@ -973,7 +994,10 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     f.src = g.play; f.title = g.title;
     f.setAttribute("allow", "autoplay; fullscreen; gamepad"); f.setAttribute("allowfullscreen", "");
     playerState("Loading " + g.title + "…", navigator.onLine === false ? "You look to be offline. The game may not load until you reconnect." : "");
-    slowTimer = setTimeout(() => playerState("This is taking a while", "Check your connection, then try again.", true), 15000);
+    slowTimer = setTimeout(() => {
+      try { const d = f.contentDocument; if (d && d.URL !== "about:blank" && d.readyState !== "loading") return playerState(); } catch (e) {}   // a game on HhGames that has loaded
+      playerState("This is taking a while", "Check your connection, then try again.", true);
+    }, 15000);
     f.onload = () => {
       clearTimeout(slowTimer);
       let missing = false;
@@ -990,6 +1014,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const wasFs = inFs();
     playing = null; hideStrip(); exitFs(); clearTimeout(slowTimer); playerState();
     $("pstage").querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; lockPage();
+    window.scrollTo(0, pageScroll);
     const back = playerOpener; playerOpener = null;
     const refocus = () => { if (back && back.isConnected) back.focus(); };
     if (!wasFs) return refocus();
@@ -1111,7 +1136,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     if (!API) return;
     const k = "hh-played-" + g.id;
     try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); } catch (e) {}
-    fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }) })
+    fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }), keepalive: true })
       .then((r) => { if (r.ok && plays && g.id in plays) { plays[g.id]++; render(); } }).catch(() => {});
   }
   // A game's leaderboard, all time or this week: one line per player, their best score.

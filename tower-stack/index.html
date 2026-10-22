@@ -85,6 +85,23 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
+
+  // Add ?debug to the address to see on screen which taps arrive and any errors (for tracking down phone-only bugs).
+  const debug = /[?&]debug\b/.test(location.search) ? document.createElement("pre") : null;
+  function log(msg) {
+    if (!debug) return;
+    debug.textContent = (msg + "\n" + debug.textContent).slice(0, 1500);
+  }
+  if (debug) {
+    debug.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:9;margin:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));max-height:40%;overflow:hidden;" +
+      "background:rgba(0,0,0,.8);color:#9f9;font:11px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;pointer-events:none";
+    document.body.appendChild(debug);
+    window.addEventListener("error", (e) => log("ERROR " + e.message + " (line " + e.lineno + ")"));
+    window.addEventListener("unhandledrejection", (e) => log("ERROR (promise) " + (e.reason && e.reason.message || e.reason)));
+    ["pointerdown", "touchstart", "mousedown", "click"].forEach((t) => window.addEventListener(t, (e) =>
+      log(t + " on " + (e.target.id || e.target.tagName) + (e.button != null ? " button " + e.button : "")), true));
+    log((window.parent !== window ? "inside HhGames" : "opened directly") + " · pointer events " + (window.PointerEvent ? "yes" : "NO") + "\n" + navigator.userAgent);
+  }
   const canvas = $("c"), ctx = canvas.getContext("2d");
 
   // ---------- saved settings
@@ -123,7 +140,9 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
     grow() { const t = AC.currentTime; [0, 4, 7, 12].forEach((s, i) => tone(523.25 * Math.pow(2, s / 12), t + i * .05, .25, "triangle", .14)); },
     over() { const t = AC.currentTime; [392, 330, 262, 196].forEach((f, i) => tone(f, t + i * .11, .3, "triangle", .22)); },
   };
-  function play(name, n) { if (AC && save.sound) { if (AC.state === "suspended") AC.resume(); try { sfx[name](n); } catch (e) {} } }
+  // Sound must never stop the game: some Safari versions throw or reject when resuming audio.
+  function wake() { try { const r = AC && AC.state === "suspended" && AC.resume && AC.resume(); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+  function play(name, n) { if (AC && save.sound) { wake(); try { sfx[name](n); } catch (e) {} } }
   function buzz(p) { try { if (save.sound && navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
 
   const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
@@ -209,7 +228,8 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   }
 
   function start() {
-    audio(); if (AC && AC.state === "suspended") AC.resume();
+    log("start");
+    audio(); wake();
     reset();
     state = "play";
     $("menu").hidden = true; $("over").hidden = true; $("score").hidden = false;
@@ -245,12 +265,16 @@ canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
     else if (state === "menu") start();
     else if (state === "over" && performance.now() - overAt > 1300) start();
   }
-  window.addEventListener("pointerdown", (e) => { if (e.button > 0) return; e.preventDefault(); tap(e); }, { passive: false });
+  // Older iPhones (iOS 12 and earlier) have no pointer events, so listen for touches there instead.
+  const DOWN = window.PointerEvent ? "pointerdown" : "ontouchstart" in window ? "touchstart" : "mousedown";
+  let lastDown = -1e9;
+  window.addEventListener(DOWN, (e) => { if (e.button > 0) return; e.preventDefault(); lastDown = performance.now(); tap(e); }, { passive: false });
+  // Backup: if a phone ever delivers the tap only as a click, the click still counts (but never twice for one tap).
+  window.addEventListener("click", (e) => { if (performance.now() - lastDown > 700) { log("tap from click"); tap(e); } });
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return;
-    if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); tap(e); }
+    if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); lastDown = performance.now(); tap(e); }
   });
-  ["startBtn", "againBtn"].forEach((id) => $(id).addEventListener("click", (e) => e.preventDefault()));
 
   // ---------- drawing (isometric)
   let W = 0, H = 0, DPR = 1, unit = 10;
