@@ -237,8 +237,11 @@ legend { font-weight: 600; font-size: .9rem; padding: 0; margin-bottom: 6px; }
   padding: 4px 14px; font-weight: 800; cursor: pointer; flex: none;
 }
 .pstage { flex: 1; position: relative; min-height: 0; }
-.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: #000; }
-.pstate { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: transparent; z-index: 1; }
+/* "Loading…" sits behind the game, so the game shows as soon as it draws, even if the browser never reports it loaded.
+   Messages with buttons go in front. */
+.pstate { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.pstate.front { z-index: 2; }
 .pstate b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin-bottom: 6px; }
 .pstate p { margin: 0 auto 16px; max-width: 36ch; color: #9ea3c6; }
 .pstate .actions { justify-content: center; }
@@ -963,6 +966,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const tab = el("a", "btn", "Open in a new tab"); tab.href = playing.play; tab.target = "_blank"; tab.rel = "noopener";
       row.appendChild(again); row.appendChild(tab); card.appendChild(row);
     }
+    st.classList.toggle("front", !!retry);
     st.replaceChildren(card); st.hidden = false;
   }
   function openPlayer(g, opener) {
@@ -973,7 +977,10 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     f.src = g.play; f.title = g.title;
     f.setAttribute("allow", "autoplay; fullscreen; gamepad"); f.setAttribute("allowfullscreen", "");
     playerState("Loading " + g.title + "…", navigator.onLine === false ? "You look to be offline. The game may not load until you reconnect." : "");
-    slowTimer = setTimeout(() => playerState("This is taking a while", "Check your connection, then try again.", true), 15000);
+    slowTimer = setTimeout(() => {
+      try { const d = f.contentDocument; if (d && d.URL !== "about:blank" && d.readyState !== "loading") return playerState(); } catch (e) {}   // a game on HhGames that has loaded
+      playerState("This is taking a while", "Check your connection, then try again.", true);
+    }, 15000);
     f.onload = () => {
       clearTimeout(slowTimer);
       let missing = false;
