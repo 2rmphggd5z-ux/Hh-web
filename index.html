@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HhGames</title>
-<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Track Star 3D, Army Rush, Street to Superstar and Darts Champion, climb the leaderboards and rate each game out of 5 stars.">
+<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Tower Stack, Track Star 3D, Army Rush, Street to Superstar and Darts Champion, climb the leaderboards and rate each game out of 5 stars.">
 <meta name="author" content="Harry Davies">
 <meta name="theme-color" content="#2f4bff">
 <link rel="manifest" href="manifest.webmanifest">
@@ -236,7 +236,12 @@ legend { font-weight: 600; font-size: .9rem; padding: 0; margin-bottom: 6px; }
   border: 2px solid var(--bg); background: transparent; color: var(--bg); border-radius: 999px;
   padding: 4px 14px; font-weight: 800; cursor: pointer; flex: none;
 }
-.player iframe { flex: 1; width: 100%; border: 0; display: block; background: #000; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pstage { flex: 1; position: relative; min-height: 0; }
+.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: #000; }
+.pstate { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.pstate b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin-bottom: 6px; }
+.pstate p { margin: 0 auto 16px; max-width: 36ch; color: #9ea3c6; }
+.pstate .actions { justify-content: center; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -333,6 +338,9 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .sumcard img, .sumcard .sw { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; border: 2px solid var(--ink); }
 .sumcard div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .sumcard strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.revtools { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 14px; }
+.revtools label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; color: var(--muted); }
+.revtools select { width: auto; padding: 5px 10px; color: var(--ink); }
 .revlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .rev { background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
 .rev .rtop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
@@ -389,13 +397,18 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
 .lb .empty-row { display: block; color: var(--muted); text-align: center; padding: 16px; }
 .lb li.empty-row::before { content: none; display: none; }
 .lbwhat { margin: 0; color: var(--muted); font-size: .9rem; }
+.myname { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--muted); font-size: .9rem; }
+.myname b { color: var(--ink); }
+.myname form { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0; flex: 1 1 auto; max-width: 420px; }
+.myname input { flex: 1 1 8em; width: auto; min-width: 0; }
+.myname .btn { padding: 5px 12px; }
 .lbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start; }
 @media (max-width: 400px) { .lbgrid { grid-template-columns: minmax(0, 1fr); } }
 .lbcard { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .lbhead { display: flex; gap: 14px; align-items: center; }
 .lbhead img { width: 84px; height: 63px; object-fit: cover; border-radius: 10px; border: 2px solid var(--ink); flex: none; }
 .lbhead div { min-width: 0; }
-.lbhead h2 { margin: 0 0 2px; font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
+.lbhead h2, .lbhead h3 { margin: 0 0 2px; font-family: var(--display); font-weight: 400; font-size: 1.3rem; line-height: 1.1; }
 .lbcard .btn { align-self: flex-start; }
 .helpbox { scroll-margin-top: calc(76px + env(safe-area-inset-top, 0px)); }
 .helpbox > p { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
@@ -450,6 +463,10 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         <h2 class="sh" id="dPlay">Jump in <small>Playable now</small></h2>
         <div class="grid" id="dashPlay"></div>
       </section>
+      <section aria-labelledby="dTop" id="dashTopBox" hidden>
+        <h2 class="sh" id="dTop">Top scores <small><a href="#leaderboards" style="color:inherit">See all</a></small></h2>
+        <div class="lbgrid" id="dashTop"></div>
+      </section>
 
       <section aria-labelledby="dRev">
         <h2 class="sh" id="dRev">Latest reviews <small><a href="#reviews" style="color:inherit">See all</a></small></h2>
@@ -487,6 +504,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         <button class="chip" type="button" data-p="all" aria-pressed="true">All time</button>
       </div>
       <p class="lbwhat" id="lbPeriodNote" style="margin:-4px 0 4px"></p>
+      <div class="myname" id="myName" hidden></div>
       <div class="lbgrid" id="lbAll"></div>
     </div>
   </div>
@@ -522,6 +540,10 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
         </div>
         <section aria-labelledby="hList">
           <h2 class="sh" id="hList">All reviews <small id="listCount"></small></h2>
+          <div class="revtools">
+            <label>Sort <select id="rSort"><option value="new">Newest first</option><option value="high">Highest rated</option><option value="low">Lowest rated</option></select></label>
+            <label>Show <select id="rStars"><option value="0">All ratings</option><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select></label>
+          </div>
           <ul class="revlist" id="revList"></ul>
         </section>
       </div>
@@ -584,6 +606,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
     <div class="pbtns"><button type="button" id="fsBtn" hidden>Full screen</button><button type="button" id="playerClose">× Exit</button></div>
   </div>
   <div class="scorestrip" id="strip" hidden></div>
+  <div class="pstage" id="pstage"><div class="pstate" id="pstate" role="status" hidden></div></div>
 </div>
 <div class="toast" id="toast" hidden role="status"></div>
 
@@ -602,6 +625,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   const boardFail = {};
   const weekBoards = {}, weekFail = {};   // this week's scores, loaded when first shown
   let period = "all";
+  let editingName = false;
   const fmtN = (n) => Number(n).toLocaleString("en-GB");
   function scoreText(g, n) {
     const u = g.board && g.board.unit;
@@ -652,13 +676,14 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const p = playsLine(g); if (p) w.appendChild(p);
     return w;
   }
-  function boardList(g, limit) {
+  function boardList(g, limit, per) {
+    per = per || period;
     const ol = el("ol", "lb");
-    const rows = (period === "week" ? weekBoards : boards)[g.id];
-    const failed = (period === "week" ? weekFail : boardFail)[g.id];
+    const rows = (per === "week" ? weekBoards : boards)[g.id];
+    const failed = (per === "week" ? weekFail : boardFail)[g.id];
     const mine = myScores(g.id);
     if (!rows) { const li = el("li", "empty-row", DB && !failed ? "Loading scores…" : "Leaderboards open soon."); ol.appendChild(li); return ol; }
-    if (!rows.length) { const li = el("li", "empty-row", period === "week" ? "No scores yet this week. Play now and take the top spot." : "No scores yet. Play now and set the first one."); ol.appendChild(li); return ol; }
+    if (!rows.length) { const li = el("li", "empty-row", per === "week" ? "No scores yet this week. Play now and take the top spot." : "No scores yet. Play now and set the first one."); ol.appendChild(li); return ol; }
     rows.slice(0, limit).forEach((r) => {
       const li = el("li"); if (mine.has(r.name.toLowerCase() + "|" + r.score)) li.className = "me";
       li.appendChild(el("span", "n", r.name)); li.appendChild(el("span", "s", scoreText(g, r.score)));
@@ -675,6 +700,43 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     if (name && best) out.add(name + "|" + best);   // saved before this list existed
     return out;
   }
+  // "Scores from this phone are saved as Sam · Change name" on the Leaderboards page.
+  function renderMyName() {
+    const box = $("myName"), name = store("hh-name");
+    box.hidden = !name || !API;
+    if (box.hidden) return;
+    const p = el("span"); p.append("Scores from this phone are saved as ", el("b", null, name), ".");
+    const ch = el("button", "btn", "Change name"); ch.type = "button";
+    ch.onclick = () => { editingName = true; nameForm(name); };
+    box.replaceChildren(p, ch);
+  }
+  function nameForm(old) {
+    const f = el("form"); f.noValidate = true;
+    const inp = el("input"); inp.type = "text"; inp.maxLength = 20; inp.value = old; inp.autocomplete = "nickname";
+    inp.setAttribute("aria-label", "Your name for the leaderboard");
+    const save = el("button", "btn primary", "Save"); save.type = "submit";
+    const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
+    const done = () => { editingName = false; renderMyName(); $("myName").querySelector("button").focus(); };
+    cancel.onclick = done;
+    f.onsubmit = (ev) => {
+      ev.preventDefault();
+      const name = inp.value.trim();
+      if (!name) { inp.focus(); return; }
+      if (/https?:\/\/|www\./i.test(name)) { toast("Names can't contain links."); return; }
+      // Scores saved under the old name stay yours, and the same scores under the new name count too
+      // (for when the old scores have been renamed on the leaderboard).
+      GAMES.forEach((g) => {
+        const mine = myScores(g.id), add = [];
+        mine.forEach((k) => { const i = k.lastIndexOf("|"); if (k.slice(0, i) === old.toLowerCase()) add.push(name.toLowerCase() + k.slice(i)); });
+        if (add.length) store("hh-mine-" + g.id, JSON.stringify([...mine, ...add].slice(-50)));
+      });
+      store("hh-name", name);
+      editingName = false; render(); done();
+      toast("Saved. Your next scores will go up as " + name + ".");
+    };
+    f.append(inp, save, cancel);
+    $("myName").replaceChildren(f); inp.focus(); inp.select();
+  }
   function when(ts) {
     const d = new Date(ts); if (isNaN(d)) return "";
     const s = (Date.now() - d.getTime()) / 1000;
@@ -686,13 +748,21 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   }
 
   // ---------- game cards
-  function cover(g, badge) {
+  // Covers load as small WebP files (cover-x-480.webp / -960.webp). A cover without them falls back to the JPG.
+  function coverImg(g, sizes) {
+    const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    const base = g.cover.replace(/\.jpe?g$/i, "");
+    if (base !== g.cover) { img.sizes = sizes; img.srcset = base + "-480.webp 480w, " + base + "-960.webp 960w"; }
+    img.src = g.cover;
+    img.onerror = () => { if (img.srcset) { img.removeAttribute("srcset"); img.src = g.cover; } else img.remove(); };
+    return img;
+  }
+  function cover(g, badge, sizes) {
     const c = el("div", "cover");
     c.style.backgroundColor = g.color; c.style.color = inkFor(g.color);
     c.appendChild(el("span", "cname", g.title));
     if (g.cover) {
-      const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.src = g.cover;
-      img.onerror = () => img.remove(); c.appendChild(img);
+      c.appendChild(coverImg(g, sizes || "(min-width: 640px) 560px, 100vw"));
     }
     const s = el("span", "status"); s.dataset.s = g.status; s.appendChild(el("i")); s.appendChild(document.createTextNode(g.status));
     c.appendChild(s);
@@ -708,7 +778,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   function card(g) {
     const b = el("button", "card"); b.type = "button";
     b.setAttribute("aria-label", g.title + ", " + g.status);
-    b.appendChild(cover(g, true));
+    b.appendChild(cover(g, true, "(min-width: 600px) 370px, 100vw"));
     const body = el("div", "cbody");
     body.appendChild(el("strong", null, g.title));
     if (g.tagline) body.appendChild(el("p", "ctag", g.tagline));
@@ -740,11 +810,12 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const li = el("li"); const tm = el("time", null, new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
       tm.dateTime = d; li.appendChild(tm); li.appendChild(el("span", null, t)); return li; }));
     document.querySelectorAll("#lbPeriod .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.p === period)));
+    if (!editingName) renderMyName();
     $("lbPeriodNote").textContent = period === "week" ? "Scores since Monday " + weekStart().toLocaleDateString("en-GB", { day: "numeric", month: "long" }) + ". Everyone starts fresh each Monday." : "The best scores ever.";
     $("lbAll").replaceChildren(...GAMES.filter((g) => g.board && isPlayable(g)).map((g) => {
       const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " leaderboard");
       const head = el("div", "lbhead");
-      const im = el("img"); im.alt = ""; im.src = g.cover; im.loading = "lazy"; head.appendChild(im);
+      head.appendChild(coverImg(g, "84px"));
       const t = el("div"); t.appendChild(el("h2", null, g.title)); t.appendChild(el("p", "lbwhat", g.board.what)); head.appendChild(t);
       sec.appendChild(head);
       sec.appendChild(boardList(g, 10));
@@ -757,6 +828,15 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       $("sAvg").textContent = reviews.length ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1) : "–";
     }
     $("dashPlay").replaceChildren(...play.map(card));
+    const tops = play.filter((g) => g.board && boards[g.id] && boards[g.id].length);
+    $("dashTopBox").hidden = !tops.length;
+    $("dashTop").replaceChildren(...tops.map((g) => {
+      const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " top 3");
+      const head = el("div", "lbhead"); head.appendChild(coverImg(g, "84px"));
+      const t = el("div"); t.appendChild(el("h3", null, g.title)); t.appendChild(el("p", "lbwhat", g.board.what)); head.appendChild(t);
+      sec.appendChild(head); sec.appendChild(boardList(g, 3, "all"));
+      return sec;
+    }));
     $("nPlay").textContent = play.length + (play.length === 1 ? " game" : " games");
     $("nSoon").textContent = soon.length + (soon.length === 1 ? " game" : " games");
     $("gridPlay").replaceChildren(...play.map(card));
@@ -780,20 +860,23 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     all.appendChild(ad); all.onclick = () => { revFilter = "all"; render(); }; sums.appendChild(all);
     play.forEach((g) => {
       const b = el("button", "sumcard"); b.type = "button"; b.setAttribute("aria-pressed", String(revFilter === g.id));
-      const im = el("img"); im.alt = ""; im.src = g.cover; im.loading = "lazy"; b.appendChild(im);
+      b.appendChild(coverImg(g, "64px"));
       const d = el("div"); d.appendChild(el("strong", null, g.title));
       const r = ratingLine(g.id); d.appendChild(r || el("span", "rating", " "));
       b.appendChild(d); b.onclick = () => { revFilter = g.id; render(); };
       sums.appendChild(b);
     });
     const list = $("revList");
-    const shown = revFilter === "all" ? reviews : reviews.filter((r) => r.game_id === revFilter);
+    const sort = $("rSort").value, onlyStars = +$("rStars").value;
+    const shown = reviews.filter((r) => (revFilter === "all" || r.game_id === revFilter) && (!onlyStars || r.rating === onlyStars));
+    if (sort !== "new") shown.sort((a, b) => (sort === "high" ? b.rating - a.rating : a.rating - b.rating) || String(b.created_at).localeCompare(String(a.created_at)));
     $("listCount").textContent = revState === "ready" ? shown.length + (shown.length === 1 ? " review" : " reviews") : "";
     $("hList").firstChild.textContent = revFilter === "all" ? "All reviews " : (byId[revFilter] ? byId[revFilter].title + " reviews " : "Reviews ");
     if (revState === "ready" && shown.length) list.replaceChildren(...shown.map((r) => reviewItem(r, revFilter === "all")));
     else list.replaceChildren(revState === "loading" ? revNote("Loading reviews", "Fetching the latest ratings.")
       : revState === "error" ? revNote("Reviews didn't load", "Check your connection and refresh the page.")
       : revState === "off" ? revNote("Reviews open soon", "Star ratings are on the way. Check back shortly.")
+      : onlyStars ? revNote("No " + onlyStars + "-star reviews", "Try showing all ratings.")
       : revNote("No reviews yet", "Be the first to rate " + (byId[revFilter] ? byId[revFilter].title : "a game") + "."));
 
     // about
@@ -803,7 +886,16 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   }
 
   // ---------- detail sheet
+  // While the game sheet or player is open, the page behind can't be scrolled, tapped or tabbed to.
+  let detailOpener = null;
+  function lockPage() {
+    const open = !$("detail").hidden || !$("player").hidden;
+    document.querySelectorAll("body > nav, main, footer").forEach((e) => { e.inert = open; });
+    document.body.style.overflow = open ? "hidden" : "";
+  }
   function openDetail(g) {
+    if ($("detail").hidden) detailOpener = document.activeElement;
+    if (location.hash !== "#game/" + g.id) history.replaceState(null, "", "#game/" + g.id);
     const sheet = el("div", "sheet");
     sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", g.title);
     const top = el("div"); top.style.position = "relative";
@@ -824,22 +916,31 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const acts = el("div", "actions");
     if (isPlayable(g)) {
       const p = el("button", "btn primary", "▶ Play here"); p.type = "button";
-      p.onclick = () => { closeDetail(); openPlayer(g); }; acts.appendChild(p);
+      p.onclick = () => { const back = detailOpener; closeDetail(true); openPlayer(g, back); }; acts.appendChild(p);
       if (revState !== "off") {
         const w = el("a", "btn", "★ Rate this game"); w.href = "#reviews";
-        w.onclick = () => { closeDetail(); revFilter = g.id; $("rGame").value = g.id; }; acts.appendChild(w);
+        w.onclick = () => { closeDetail(true); revFilter = g.id; $("rGame").value = g.id; }; acts.appendChild(w);
       }
     } else acts.appendChild(el("p", "ctag", "Not playable yet. Check back soon."));
+    const sh = el("button", "btn", "Share"); sh.type = "button";
+    sh.onclick = () => share(isPlayable(g) ? "Play " + g.title + " free on HhGames!" : g.title + " is coming soon to HhGames.", SITE_URL + "#game/" + g.id);
+    acts.appendChild(sh);
     b.appendChild(acts);
     if (isPlayable(g) && revState === "ready") {
       const rs = reviews.filter((r) => r.game_id === g.id).slice(0, 3);
       if (rs.length) { b.appendChild(el("h3", null, "What players say")); const ul = el("ul", "revlist"); rs.forEach((r) => ul.appendChild(reviewItem(r, false))); b.appendChild(ul); }
     }
     sheet.appendChild(b);
-    $("detail").replaceChildren(sheet); $("detail").hidden = false;
+    $("detail").replaceChildren(sheet); $("detail").hidden = false; lockPage();
     x.focus();
   }
-  function closeDetail() { $("detail").hidden = true; $("detail").replaceChildren(); }
+  function closeDetail(keepFocus) {
+    if ($("detail").hidden) return;
+    $("detail").hidden = true; $("detail").replaceChildren(); lockPage();
+    if (location.hash.startsWith("#game/")) history.replaceState(null, "", "#" + currentView);
+    const back = detailOpener; detailOpener = null;
+    if (!keepFocus && back && back.isConnected) back.focus();
+  }
 
   // ---------- player
   const box = $("player");
@@ -851,19 +952,51 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   document.addEventListener("fullscreenchange", syncFs); document.addEventListener("webkitfullscreenchange", syncFs);
   $("fsBtn").hidden = !fsOk;
   $("fsBtn").onclick = () => (inFs() ? exitFs() : enterFs());
-  let playing = null;
-  function openPlayer(g) {
-    playing = g; hideStrip(); countPlay(g);
-    box.querySelectorAll("iframe").forEach((f) => f.remove());
+  let playing = null, playerOpener = null, slowTimer = 0;
+  function playerState(title, text, retry) {
+    const st = $("pstate");
+    if (!title) { st.hidden = true; st.replaceChildren(); return; }
+    const card = el("div"); card.appendChild(el("b", null, title)); if (text) card.appendChild(el("p", null, text));
+    if (retry) {
+      const row = el("div", "actions");
+      const again = el("button", "btn primary", "Try again"); again.type = "button"; again.onclick = () => openPlayer(playing, playerOpener);
+      const tab = el("a", "btn", "Open in a new tab"); tab.href = playing.play; tab.target = "_blank"; tab.rel = "noopener";
+      row.appendChild(again); row.appendChild(tab); card.appendChild(row);
+    }
+    st.replaceChildren(card); st.hidden = false;
+  }
+  function openPlayer(g, opener) {
+    playing = g; playerOpener = opener || (box.hidden ? document.activeElement : playerOpener);
+    hideStrip(); countPlay(g); clearTimeout(slowTimer);
+    $("pstage").querySelectorAll("iframe").forEach((f) => f.remove());
     const f = document.createElement("iframe");
     f.src = g.play; f.title = g.title;
     f.setAttribute("allow", "autoplay; fullscreen; gamepad"); f.setAttribute("allowfullscreen", "");
+    playerState("Loading " + g.title + "…", navigator.onLine === false ? "You look to be offline. The game may not load until you reconnect." : "");
+    slowTimer = setTimeout(() => playerState("This is taking a while", "Check your connection, then try again.", true), 15000);
+    f.onload = () => {
+      clearTimeout(slowTimer);
+      let missing = false;
+      try { missing = /not found/i.test(f.contentDocument.title); } catch (e) {}   // only readable for games hosted on HhGames
+      if (missing) playerState(g.title + " didn't load", "The game couldn't be found. Try again, or report it from About › Help.", true);
+      else { playerState(); try { f.focus(); } catch (e) {} }
+    };
     $("playerTitle").textContent = g.title;
-    box.appendChild(f); box.hidden = false; document.body.style.overflow = "hidden";
+    $("pstage").appendChild(f); box.hidden = false; lockPage();
     if (fsOk) enterFs(); syncFs();
-    setTimeout(() => { try { f.focus(); } catch (e) {} }, 50);
+    $("playerClose").focus();
   }
-  function closePlayer() { playing = null; hideStrip(); exitFs(); box.querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; document.body.style.overflow = ""; }
+  function closePlayer() {
+    const wasFs = inFs();
+    playing = null; hideStrip(); exitFs(); clearTimeout(slowTimer); playerState();
+    $("pstage").querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; lockPage();
+    const back = playerOpener; playerOpener = null;
+    const refocus = () => { if (back && back.isConnected) back.focus(); };
+    if (!wasFs) return refocus();
+    // Nothing behind a full-screen element can take focus, so wait until full screen has ended.
+    const done = () => { ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.removeEventListener(t, done)); refocus(); };
+    ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, done));
+  }
   $("playerClose").onclick = closePlayer;
   $("detail").addEventListener("click", (e) => { if (e.target.id === "detail") closeDetail(); });
   document.addEventListener("keydown", (e) => {
@@ -872,14 +1005,19 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   });
 
   // ---------- menu (one view at a time, linked by #dashboard, #games, #reviews, #about)
+  // A game's own link is #game/<id>: it opens the Games page with that game's sheet.
   const VIEWS = ["dashboard", "games", "leaderboards", "reviews", "about"];
+  let currentView = "dashboard";
   function show() {
-    const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
+    const h = location.hash.slice(1), linked = /^game\/(.+)$/.exec(h), lg = linked && byId[decodeURIComponent(linked[1])];
+    const v = lg ? "games" : VIEWS.includes(h) ? h : "dashboard";
+    currentView = v;
     document.querySelectorAll(".view").forEach((s) => { s.hidden = s.dataset.view !== v; });
     document.querySelectorAll("a[data-view]").forEach((a) => { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    closeDetail();
+    closeDetail(true);
     window.scrollTo(0, 0);
     if (v === "reviews") render();
+    if (lg) openDetail(lg);
   }
   window.addEventListener("hashchange", show);
 
@@ -901,7 +1039,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       const res = await fetch(DB + "?select=game_id,rating,name,comment,created_at&order=created_at.desc&limit=1000", { headers: headers() });
       if (!res.ok) throw new Error(res.status);
       reviews = clean(await res.json());
-      revState = reviews.length ? "ready" : "ready";
+      revState = "ready";
     } catch (e) { revState = "error"; }
     render();
   }
@@ -923,6 +1061,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     $("pickhint").textContent = n ? n + " / 5 · " + LABEL[n] : "Tap a star";
   }
   GAMES.filter(isPlayable).forEach((g) => { const o = el("option", null, g.title); o.value = g.id; $("rGame").appendChild(o); });
+  $("rSort").addEventListener("change", render); $("rStars").addEventListener("change", render);
   $("rText").addEventListener("input", () => { $("rCount").textContent = $("rText").value.length + " / 500"; });
   function formErr(m) { const e = $("rErr"); e.textContent = m; e.hidden = !m; }
   function lockForm() {
@@ -975,20 +1114,24 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     fetch(API + "/rpc/count_play", { method: "POST", headers: headers(), body: JSON.stringify({ game: g.id }) })
       .then((r) => { if (r.ok && plays && g.id in plays) { plays[g.id]++; render(); } }).catch(() => {});
   }
-  async function loadBoard(id) {
+  // A game's leaderboard, all time or this week: one line per player, their best score.
+  async function loadScores(id, week) {
     if (!API) return;
+    const into = week ? weekBoards : boards, failed = week ? weekFail : boardFail;
+    const since = week ? "&created_at=gte." + encodeURIComponent(weekStart().toISOString()) : "";
     try {
-      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
+      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + since + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
       if (!res.ok) throw 0;
       const seen = new Set(), out = [];
       (await res.json()).forEach((r) => {
         const name = String(r.name || "").slice(0, 20).trim(), key = name.toLowerCase(), sc = Math.floor(+r.score);
-        if (!name || !(sc > 0) || seen.has(key)) return;   // one line per player: their best
+        if (!name || !(sc > 0) || seen.has(key)) return;
         seen.add(key); out.push({ name, score: sc });
       });
-      boards[id] = out; render();
-    } catch (e) { boardFail[id] = true; render(); }
+      into[id] = out; render();
+    } catch (e) { failed[id] = true; render(); }
   }
+  const loadBoard = (id) => loadScores(id, false), loadWeek = (id) => loadScores(id, true);
   function loadBoards() { GAMES.filter((g) => g.board && isPlayable(g)).forEach((g) => loadBoard(g.id)); }
   // Weeks start at midnight on Monday, UK time.
   function weekStart() {
@@ -999,20 +1142,6 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const noon = Date.UTC(+v.year, +v.month - 1, +v.day - dow, 12);
     const londonHour = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "numeric", hourCycle: "h23" }).format(new Date(noon));
     return new Date(noon - 12 * 3600000 - (londonHour - 12) * 3600000);
-  }
-  async function loadWeek(id) {
-    if (!API) return;
-    try {
-      const res = await fetch(API + "/scores?select=name,score&game_id=eq." + encodeURIComponent(id) + "&created_at=gte." + encodeURIComponent(weekStart().toISOString()) + "&order=score.desc,created_at.asc&limit=200", { headers: headers() });
-      if (!res.ok) throw 0;
-      const seen = new Set(), out = [];
-      (await res.json()).forEach((r) => {
-        const name = String(r.name || "").slice(0, 20).trim(), key = name.toLowerCase(), sc = Math.floor(+r.score);
-        if (!name || !(sc > 0) || seen.has(key)) return;
-        seen.add(key); out.push({ name, score: sc });
-      });
-      weekBoards[id] = out; render();
-    } catch (e) { weekFail[id] = true; render(); }
   }
   function loadWeeks() { GAMES.filter((g) => g.board && isPlayable(g)).forEach((g) => loadWeek(g.id)); }
   document.querySelectorAll("#lbPeriod .chip").forEach((c) => c.addEventListener("click", () => {
@@ -1061,7 +1190,9 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   async function shareScore(g, score) {
     const text = (g.board && g.board.unit === "blocks" ? "I built a tower " + scoreText(g, score) + " high" : "I scored " + scoreText(g, score))
       + " in " + g.title + " on HhGames! Can you beat it?";
-    const url = SITE_URL + "#leaderboards";
+    return share(text, SITE_URL + "#leaderboards");
+  }
+  async function share(text, url) {
     try {
       if (navigator.share) { await navigator.share({ title: "HhGames", text, url }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
@@ -1101,8 +1232,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const app = (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) ? " · home screen app" : "";
     return (os + " · " + br + " · " + screen.width + "×" + screen.height + app).slice(0, 120);
   }
-  const REPORTABLE = ["track-star-3d", "army-rush", "street-to-superstar", "quick-chaos", "darts-championship", "tower-stack"];   // must match the reports table
-  [["website", "The HhGames website"]].concat(GAMES.filter((g) => REPORTABLE.includes(g.id)).map((g) => [g.id, g.title])).forEach(([v, t]) => {
+  [["website", "The HhGames website"]].concat(GAMES.map((g) => [g.id, g.title])).forEach(([v, t]) => {
     const o = el("option", null, t); o.value = v; $("bAbout").appendChild(o); });
   $("bDevice").textContent = "Your report will include your device type so Harry can recreate the problem: " + deviceInfo() + ".";
   $("bMsg").addEventListener("input", () => { $("bCount").textContent = $("bMsg").value.length + " / 1000"; });
@@ -1135,6 +1265,9 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   if (standalone) $("install").hidden = true;
   else if (/iPhone|iPad|iPod/.test(navigator.userAgent)) $("installHow").textContent = "In Safari, tap the Share button, then Add to Home Screen. It opens full screen like an app.";
   else if (/Android/.test(navigator.userAgent)) $("installHow").textContent = "In Chrome, tap the ⋮ menu, then Add to Home screen (or Install app). It opens full screen like an app.";
+
+  // Keeps the site and its pictures on the phone, so it opens fast and works offline.
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
   lockForm();
   render();
