@@ -103,6 +103,7 @@ grant insert (about, message, name, device) on public.reports to anon, authentic
 -- 5. Leaderboard protection: highest possible scores, rate limits, name filter -----
 -- Darts: 180 is the most one visit can score.
 -- Street to Superstar: 60 seconds at most 8 points a shot is well under 500.
+-- Tower Stack: one point a block, and 5,000 blocks is far beyond anyone.
 -- Track Star 3D and Army Rush: change these if real players ever get close.
 alter table public.scores drop constraint if exists scores_max_check;
 alter table public.scores add constraint scores_max_check check (
@@ -111,6 +112,7 @@ alter table public.scores add constraint scores_max_check check (
     when 'street-to-superstar' then score <= 500
     when 'army-rush'           then score <= 1000
     when 'track-star-3d'       then score <= 10000000
+    when 'tower-stack'         then score <= 5000
     else true
   end
 ) not valid;   -- "not valid" leaves scores that are already saved alone

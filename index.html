@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HhGames</title>
-<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Track Star 3D, Army Rush, Street to Superstar and Darts Champion, climb the leaderboards and rate each game out of 5 stars.">
+<meta name="description" content="HhGames by Harry Davies: mobile games you can play in your browser. Play Tower Stack, Track Star 3D, Army Rush, Street to Superstar and Darts Champion, climb the leaderboards and rate each game out of 5 stars.">
 <meta name="author" content="Harry Davies">
 <meta name="theme-color" content="#2f4bff">
 <link rel="manifest" href="manifest.webmanifest">
@@ -236,7 +236,12 @@ legend { font-weight: 600; font-size: .9rem; padding: 0; margin-bottom: 6px; }
   border: 2px solid var(--bg); background: transparent; color: var(--bg); border-radius: 999px;
   padding: 4px 14px; font-weight: 800; cursor: pointer; flex: none;
 }
-.player iframe { flex: 1; width: 100%; border: 0; display: block; background: #000; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pstage { flex: 1; position: relative; min-height: 0; }
+.player iframe { position: absolute; inset: 0 0 env(safe-area-inset-bottom, 0px); width: 100%; height: calc(100% - env(safe-area-inset-bottom, 0px)); border: 0; display: block; background: #000; }
+.pstate { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 24px; background: #000; color: #eef0fa; text-align: center; }
+.pstate b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin-bottom: 6px; }
+.pstate p { margin: 0 auto 16px; max-width: 36ch; color: #9ea3c6; }
+.pstate .actions { justify-content: center; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -584,6 +589,7 @@ section h2.sh small { font-family: var(--body); font-weight: 800; font-size: .8r
     <div class="pbtns"><button type="button" id="fsBtn" hidden>Full screen</button><button type="button" id="playerClose">× Exit</button></div>
   </div>
   <div class="scorestrip" id="strip" hidden></div>
+  <div class="pstage" id="pstage"><div class="pstate" id="pstate" role="status" hidden></div></div>
 </div>
 <div class="toast" id="toast" hidden role="status"></div>
 
@@ -686,13 +692,21 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   }
 
   // ---------- game cards
-  function cover(g, badge) {
+  // Covers load as small WebP files (cover-x-480.webp / -960.webp). A cover without them falls back to the JPG.
+  function coverImg(g, sizes) {
+    const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    const base = g.cover.replace(/\.jpe?g$/i, "");
+    if (base !== g.cover) { img.sizes = sizes; img.srcset = base + "-480.webp 480w, " + base + "-960.webp 960w"; }
+    img.src = g.cover;
+    img.onerror = () => { if (img.srcset) { img.removeAttribute("srcset"); img.src = g.cover; } else img.remove(); };
+    return img;
+  }
+  function cover(g, badge, sizes) {
     const c = el("div", "cover");
     c.style.backgroundColor = g.color; c.style.color = inkFor(g.color);
     c.appendChild(el("span", "cname", g.title));
     if (g.cover) {
-      const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.src = g.cover;
-      img.onerror = () => img.remove(); c.appendChild(img);
+      c.appendChild(coverImg(g, sizes || "(min-width: 640px) 560px, 100vw"));
     }
     const s = el("span", "status"); s.dataset.s = g.status; s.appendChild(el("i")); s.appendChild(document.createTextNode(g.status));
     c.appendChild(s);
@@ -708,7 +722,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   function card(g) {
     const b = el("button", "card"); b.type = "button";
     b.setAttribute("aria-label", g.title + ", " + g.status);
-    b.appendChild(cover(g, true));
+    b.appendChild(cover(g, true, "(min-width: 600px) 370px, 100vw"));
     const body = el("div", "cbody");
     body.appendChild(el("strong", null, g.title));
     if (g.tagline) body.appendChild(el("p", "ctag", g.tagline));
@@ -744,7 +758,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     $("lbAll").replaceChildren(...GAMES.filter((g) => g.board && isPlayable(g)).map((g) => {
       const sec = el("section", "lbcard"); sec.setAttribute("aria-label", g.title + " leaderboard");
       const head = el("div", "lbhead");
-      const im = el("img"); im.alt = ""; im.src = g.cover; im.loading = "lazy"; head.appendChild(im);
+      head.appendChild(coverImg(g, "84px"));
       const t = el("div"); t.appendChild(el("h2", null, g.title)); t.appendChild(el("p", "lbwhat", g.board.what)); head.appendChild(t);
       sec.appendChild(head);
       sec.appendChild(boardList(g, 10));
@@ -780,7 +794,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     all.appendChild(ad); all.onclick = () => { revFilter = "all"; render(); }; sums.appendChild(all);
     play.forEach((g) => {
       const b = el("button", "sumcard"); b.type = "button"; b.setAttribute("aria-pressed", String(revFilter === g.id));
-      const im = el("img"); im.alt = ""; im.src = g.cover; im.loading = "lazy"; b.appendChild(im);
+      b.appendChild(coverImg(g, "64px"));
       const d = el("div"); d.appendChild(el("strong", null, g.title));
       const r = ratingLine(g.id); d.appendChild(r || el("span", "rating", " "));
       b.appendChild(d); b.onclick = () => { revFilter = g.id; render(); };
@@ -803,7 +817,15 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   }
 
   // ---------- detail sheet
+  // While the game sheet or player is open, the page behind can't be scrolled, tapped or tabbed to.
+  let detailOpener = null;
+  function lockPage() {
+    const open = !$("detail").hidden || !$("player").hidden;
+    document.querySelectorAll("body > nav, main, footer").forEach((e) => { e.inert = open; });
+    document.body.style.overflow = open ? "hidden" : "";
+  }
   function openDetail(g) {
+    if ($("detail").hidden) detailOpener = document.activeElement;
     const sheet = el("div", "sheet");
     sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", g.title);
     const top = el("div"); top.style.position = "relative";
@@ -824,10 +846,10 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const acts = el("div", "actions");
     if (isPlayable(g)) {
       const p = el("button", "btn primary", "▶ Play here"); p.type = "button";
-      p.onclick = () => { closeDetail(); openPlayer(g); }; acts.appendChild(p);
+      p.onclick = () => { const back = detailOpener; closeDetail(true); openPlayer(g, back); }; acts.appendChild(p);
       if (revState !== "off") {
         const w = el("a", "btn", "★ Rate this game"); w.href = "#reviews";
-        w.onclick = () => { closeDetail(); revFilter = g.id; $("rGame").value = g.id; }; acts.appendChild(w);
+        w.onclick = () => { closeDetail(true); revFilter = g.id; $("rGame").value = g.id; }; acts.appendChild(w);
       }
     } else acts.appendChild(el("p", "ctag", "Not playable yet. Check back soon."));
     b.appendChild(acts);
@@ -836,10 +858,15 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
       if (rs.length) { b.appendChild(el("h3", null, "What players say")); const ul = el("ul", "revlist"); rs.forEach((r) => ul.appendChild(reviewItem(r, false))); b.appendChild(ul); }
     }
     sheet.appendChild(b);
-    $("detail").replaceChildren(sheet); $("detail").hidden = false;
+    $("detail").replaceChildren(sheet); $("detail").hidden = false; lockPage();
     x.focus();
   }
-  function closeDetail() { $("detail").hidden = true; $("detail").replaceChildren(); }
+  function closeDetail(keepFocus) {
+    if ($("detail").hidden) return;
+    $("detail").hidden = true; $("detail").replaceChildren(); lockPage();
+    const back = detailOpener; detailOpener = null;
+    if (!keepFocus && back && back.isConnected) back.focus();
+  }
 
   // ---------- player
   const box = $("player");
@@ -851,19 +878,51 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   document.addEventListener("fullscreenchange", syncFs); document.addEventListener("webkitfullscreenchange", syncFs);
   $("fsBtn").hidden = !fsOk;
   $("fsBtn").onclick = () => (inFs() ? exitFs() : enterFs());
-  let playing = null;
-  function openPlayer(g) {
-    playing = g; hideStrip(); countPlay(g);
-    box.querySelectorAll("iframe").forEach((f) => f.remove());
+  let playing = null, playerOpener = null, slowTimer = 0;
+  function playerState(title, text, retry) {
+    const st = $("pstate");
+    if (!title) { st.hidden = true; st.replaceChildren(); return; }
+    const card = el("div"); card.appendChild(el("b", null, title)); if (text) card.appendChild(el("p", null, text));
+    if (retry) {
+      const row = el("div", "actions");
+      const again = el("button", "btn primary", "Try again"); again.type = "button"; again.onclick = () => openPlayer(playing, playerOpener);
+      const tab = el("a", "btn", "Open in a new tab"); tab.href = playing.play; tab.target = "_blank"; tab.rel = "noopener";
+      row.appendChild(again); row.appendChild(tab); card.appendChild(row);
+    }
+    st.replaceChildren(card); st.hidden = false;
+  }
+  function openPlayer(g, opener) {
+    playing = g; playerOpener = opener || (box.hidden ? document.activeElement : playerOpener);
+    hideStrip(); countPlay(g); clearTimeout(slowTimer);
+    $("pstage").querySelectorAll("iframe").forEach((f) => f.remove());
     const f = document.createElement("iframe");
     f.src = g.play; f.title = g.title;
     f.setAttribute("allow", "autoplay; fullscreen; gamepad"); f.setAttribute("allowfullscreen", "");
+    playerState("Loading " + g.title + "…", navigator.onLine === false ? "You look to be offline. The game may not load until you reconnect." : "");
+    slowTimer = setTimeout(() => playerState("This is taking a while", "Check your connection, then try again.", true), 15000);
+    f.onload = () => {
+      clearTimeout(slowTimer);
+      let missing = false;
+      try { missing = /not found/i.test(f.contentDocument.title); } catch (e) {}   // only readable for games hosted on HhGames
+      if (missing) playerState(g.title + " didn't load", "The game couldn't be found. Try again, or report it from About › Help.", true);
+      else { playerState(); try { f.focus(); } catch (e) {} }
+    };
     $("playerTitle").textContent = g.title;
-    box.appendChild(f); box.hidden = false; document.body.style.overflow = "hidden";
+    $("pstage").appendChild(f); box.hidden = false; lockPage();
     if (fsOk) enterFs(); syncFs();
-    setTimeout(() => { try { f.focus(); } catch (e) {} }, 50);
+    $("playerClose").focus();
   }
-  function closePlayer() { playing = null; hideStrip(); exitFs(); box.querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; document.body.style.overflow = ""; }
+  function closePlayer() {
+    const wasFs = inFs();
+    playing = null; hideStrip(); exitFs(); clearTimeout(slowTimer); playerState();
+    $("pstage").querySelectorAll("iframe").forEach((f) => f.remove()); box.hidden = true; lockPage();
+    const back = playerOpener; playerOpener = null;
+    const refocus = () => { if (back && back.isConnected) back.focus(); };
+    if (!wasFs) return refocus();
+    // Nothing behind a full-screen element can take focus, so wait until full screen has ended.
+    const done = () => { ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.removeEventListener(t, done)); refocus(); };
+    ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, done));
+  }
   $("playerClose").onclick = closePlayer;
   $("detail").addEventListener("click", (e) => { if (e.target.id === "detail") closeDetail(); });
   document.addEventListener("keydown", (e) => {
@@ -877,7 +936,7 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
     document.querySelectorAll(".view").forEach((s) => { s.hidden = s.dataset.view !== v; });
     document.querySelectorAll("a[data-view]").forEach((a) => { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    closeDetail();
+    closeDetail(true);
     window.scrollTo(0, 0);
     if (v === "reviews") render();
   }
@@ -1135,6 +1194,9 @@ const NEWS = [["2026-10-22", "New game: Tower Stack. Tap to drop each block and 
   if (standalone) $("install").hidden = true;
   else if (/iPhone|iPad|iPod/.test(navigator.userAgent)) $("installHow").textContent = "In Safari, tap the Share button, then Add to Home Screen. It opens full screen like an app.";
   else if (/Android/.test(navigator.userAgent)) $("installHow").textContent = "In Chrome, tap the ⋮ menu, then Add to Home screen (or Install app). It opens full screen like an app.";
+
+  // Keeps the site and its pictures on the phone, so it opens fast and works offline.
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
   lockForm();
   render();
