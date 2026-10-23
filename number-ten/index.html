@@ -212,6 +212,16 @@ h1, h2, h3 { margin: 0; }
 .newbest { display: inline-block; background: var(--gold); color: #1b1404; font-weight: 900; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
   padding: 4px 12px; border-radius: 999px; margin-left: 6px; }
 .help h4 { margin: 14px 0 4px; }
+.pledge { text-align: left; width: 100%; border: 2px solid #cfc5ae; background: #fff; color: var(--paperInk); border-radius: 14px; padding: 10px 12px; cursor: pointer;
+  display: flex; gap: 10px; align-items: center; }
+.pledge b { display: block; } .pledge small { color: #6b6255; }
+.pledge .tick { width: 26px; height: 26px; flex: none; border-radius: 8px; border: 2px solid var(--paperInk); display: grid; place-items: center; font-weight: 900; }
+.pledge[aria-pressed="true"] { border-color: var(--paperInk); background: #fff6dc; }
+.pledge[aria-pressed="true"] .tick { background: var(--paperInk); color: var(--paper); }
+.mlist { display: grid; gap: 4px; margin: 10px 0 12px; font-size: .9rem; }
+.mlist div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid #e3dac6; font-weight: 700; }
+.mlist span:last-child { color: #6b6255; font-weight: 800; text-align: right; }
+.opt .broke { display: block; font-size: .75rem; color: #9b1c1c; font-weight: 800; margin-top: 2px; }
 .opp { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; font-size: .9rem; color: #3a342c; }
 .opp b { display: block; color: var(--paperInk); }
 .tug { position: relative; height: 18px; border-radius: 99px; overflow: hidden; display: flex; margin: 6px 0 4px; border: 2px solid var(--paperInk); }
@@ -400,7 +410,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Cost of living payments for poorer families", fx: { m: -7, a: 6, s: 1 }, tag: "L", r: "The payments land well on the doorstep." },
         { t: "Freeze fuel duty and energy VAT", fx: { m: -4, a: 4, e: 1 }, tag: "P", r: "Drivers cheer. Economists grumble." }] },
     { id: "blackhole", post: "chan", title: "£15bn black hole found", text: "The Office for Budget Responsibility says the numbers don't add up. Something has to give.",
-      opts: [{ t: "Put 1p on income tax", fx: { m: 12, a: -8, e: -1 }, tag: "L", r: "The gap is closed. The tabloids call it a raid on workers." },
+      opts: [{ t: "Put 1p on income tax", tax: 1, fx: { m: 12, a: -8, e: -1 }, tag: "L", r: "The gap is closed. The tabloids call it a raid on workers." },
         { t: "Cut department budgets", fx: { m: 10, s: -7, a: -2 }, tag: "R", r: "Ministers fume as their budgets are trimmed." },
         { t: "Borrow and hope growth fixes it", fx: { m: -4, e: -2 }, r: "Markets raise an eyebrow. Interest bills creep up." }] },
     { id: "pensions", post: "chan", title: "Triple lock under pressure", text: "Keeping the state pension triple lock will cost billions more than planned.",
@@ -408,27 +418,27 @@ h1, h2, h3 { margin: 0; }
         { t: "Scrap it", fx: { m: 9, a: -9, u: -3 }, tag: "R", r: "Backbenchers with older voters are furious." },
         { t: "Means-test it for the wealthiest", fx: { m: 4, a: -2 }, tag: "C", r: "A compromise nobody loves, but it holds." }] },
     { id: "housing", post: "chan", title: "Housing crisis", text: "Rents are at record highs and first-time buyers are priced out across the country.",
-      opts: [{ t: "Build 300,000 council homes", fx: { m: -10, s: 6, e: 3, a: 4 }, tag: "L", r: "Cranes go up across the country." },
+      opts: [{ t: "Build 300,000 council homes", later: "homes", fx: { m: -10, s: 6, e: 3, a: 4 }, tag: "L", r: "Cranes go up across the country." },
         { t: "Rip up planning red tape", fx: { e: 5, a: -2, u: -2 }, tag: "R", r: "Builders rejoice. Some villages are up in arms." },
         { t: "Help-to-buy deposits for first-timers", fx: { m: -5, a: 5, e: 1 }, tag: "P", r: "Young voters like it. Prices tick up again." }] },
     { id: "bank", post: "chan", title: "A high-street bank wobbles", text: "Queues form outside branches of a mid-sized bank after bad loans emerge.",
-      opts: [{ t: "Bail it out", fx: { m: -8, e: 3, a: -3 }, r: "Savers are safe. 'Bankers bailed out again', say critics." },
+      opts: [{ t: "Bail it out", later: "bankbail", fx: { m: -8, e: 3, a: -3 }, r: "Savers are safe. 'Bankers bailed out again', say critics." },
         { t: "Let it fail", fx: { e: -6, a: -2 }, tag: "R", r: "Thousands of savers face months of worry." },
-        { t: "Nationalise it", fx: { m: -5, e: 1, a: 2 }, tag: "L", r: "The state now owns a bank. Again." }] },
+        { t: "Nationalise it", later: "banknat", fx: { m: -5, e: 1, a: 2 }, tag: "L", r: "The state now owns a bank. Again." }] },
     { id: "strikes", post: "chan", title: "Rail strikes paralyse the country", text: "Rail unions walk out over pay. Commuters are stuck and businesses are losing money.",
       opts: [{ t: "Meet the pay demands", fx: { m: -4, e: 2, a: 1 }, tag: "L", r: "Trains run again. Other unions take note." },
         { t: "Pass tough anti-strike laws", fx: { e: 2, a: -2 }, tag: "R", r: "The unions vow to fight on." },
         { t: "Send it to independent arbitration", fx: { m: -2, a: 2 }, tag: "C", r: "A deal is struck after a long week." }] },
     { id: "techtax", post: "chan", title: "Tech giants paying little tax", text: "A report shows huge online firms paid almost no UK tax last year.",
-      opts: [{ t: "Raise the digital services tax", fx: { m: 5, e: -2, a: 3 }, tag: "L", r: "The firms threaten to move jobs abroad." },
+      opts: [{ t: "Raise the digital services tax", tax: 1, fx: { m: 5, e: -2, a: 3 }, tag: "L", r: "The firms threaten to move jobs abroad." },
         { t: "Cut it to attract investment", fx: { m: -3, e: 5, a: -2 }, tag: "R", r: "A shiny new data centre is announced." }] },
     { id: "boats", post: "home", title: "Small boats record", text: "A record number of people crossed the Channel in small boats this month.",
-      opts: [{ t: "Offshore processing scheme", fx: { m: -6, a: 4 }, tag: "P", r: "Popular in the polls, expensive in practice." },
+      opts: [{ t: "Offshore processing scheme", later: "offshore", fx: { m: -6, a: 4 }, tag: "P", r: "Popular in the polls, expensive in practice." },
         { t: "Hire caseworkers to clear the backlog", fx: { m: -3, s: 2, a: 1 }, tag: "C", r: "Hotels start to empty as claims get decided." },
         { t: "Safe legal routes and a deal with France", fx: { m: -2, a: -2, s: 1 }, tag: "L", r: "Crossings slow, but critics call it soft." }] },
     { id: "prisons", post: "home", title: "Prisons are full", text: "There's no room left in any jail in England and Wales. Judges are being told to delay sentences.",
       opts: [{ t: "Release some prisoners early", fx: { a: -6, m: 1 }, r: "The headlines are brutal." },
-        { t: "Build three new mega-prisons", fx: { m: -7, s: 3, a: 2 }, tag: "R", r: "Construction starts, but it'll take years." },
+        { t: "Build three new mega-prisons", later: "prisons", fx: { m: -7, s: 3, a: 2 }, tag: "R", r: "Construction starts, but it'll take years." },
         { t: "More community sentences", fx: { s: 2, a: -2, m: 2 }, tag: "C", r: "Cheaper, and reoffending falls a little." }] },
     { id: "riots", post: "home", title: "Riots in three cities", text: "Violence spreads after false rumours go viral online. Police are stretched thin.",
       opts: [{ t: "Swift arrests and fast-track courts", fx: { a: 5, m: -2 }, tag: "R", r: "Order is restored within days." },
@@ -443,14 +453,14 @@ h1, h2, h3 { margin: 0; }
         { t: "Points system for skilled workers only", fx: { e: 2, a: 1 }, tag: "R", r: "Numbers fall slowly." },
         { t: "Defend migration's role in the economy", fx: { e: 4, a: -4 }, tag: "C", r: "Business leaders cheer. Voters are less sure." }] },
     { id: "cannabis", post: "home", title: "Calls to legalise cannabis", text: "A cross-party report says legal, taxed cannabis would cut crime.",
-      opts: [{ t: "Legalise and tax it", fx: { m: 3, a: -3, e: 1 }, tag: "C", r: "The first licensed shops open to long queues." },
+      opts: [{ t: "Legalise and tax it", later: "cannabis", fx: { m: 3, a: -3, e: 1 }, tag: "C", r: "The first licensed shops open to long queues." },
         { t: "Tougher penalties instead", fx: { a: 2 }, tag: "R", r: "The report gathers dust." }] },
     { id: "troops", post: "foreign", title: "NATO ally under threat", text: "An Eastern European ally asks for British troops to deter an invasion.",
-      opts: [{ t: "Send 5,000 troops", fx: { m: -5, a: 3 }, tag: "R", r: "Allies applaud British leadership." },
+      opts: [{ t: "Send 5,000 troops", later: "troops", fx: { m: -5, a: 3 }, tag: "R", r: "Allies applaud British leadership." },
         { t: "Send weapons and money, not troops", fx: { m: -3, a: 1 }, tag: "C", r: "A cautious middle path." },
         { t: "Stay out of it", fx: { a: -4, e: -1 }, tag: "P", r: "Allies are dismayed. The US takes note." }] },
     { id: "eu", post: "foreign", title: "Brussels comes calling", text: "The EU offers closer trade ties, but there are strings attached.",
-      opts: [{ t: "Join a customs union", fx: { e: 6, a: -3 }, tag: "C", r: "Exporters celebrate. Leave voters are angry." },
+      opts: [{ t: "Join a customs union", later: "customs", fx: { e: 6, a: -3 }, tag: "C", r: "Exporters celebrate. Leave voters are angry." },
         { t: "Just a deal on food and farming", fx: { e: 3 }, r: "Lorries flow a bit faster at Dover." },
         { t: "Say no. Go global instead", fx: { e: -1, a: 2 }, tag: "P", r: "A new trade deal with a small Pacific nation is signed." }] },
     { id: "tariffs", post: "foreign", title: "US slaps tariffs on British goods", text: "The White House puts 25% tariffs on British cars and whisky.",
@@ -480,7 +490,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Hold firm", fx: { s: -5, a: -2 }, tag: "R", r: "Thousands of operations are cancelled." },
         { t: "Pay plus reform of working hours", fx: { m: -2, s: 2 }, tag: "C", r: "A grudging truce." }] },
     { id: "virus", post: "health", title: "A new virus spreads", text: "Scientists warn a new respiratory virus is spreading fast in Europe.",
-      opts: [{ t: "Close borders and lock down early", fx: { e: -6, s: 5, a: 1 }, r: "Cases stay low, but shops shut for weeks." },
+      opts: [{ t: "Close borders and lock down early", later: "lockdown", fx: { e: -6, s: 5, a: 1 }, r: "Cases stay low, but shops shut for weeks." },
         { t: "Testing, masks and vaccines", fx: { m: -4, s: 3, a: 2 }, tag: "C", r: "A steady, sensible response." },
         { t: "Keep calm and carry on", fx: { e: 2, s: -7, a: -4 }, tag: "P", r: "Hospitals fill up by spring." }] },
     { id: "care", post: "health", title: "Social care collapsing", text: "Care homes are closing and older people are stuck in hospital beds.",
@@ -488,7 +498,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Encourage private care insurance", fx: { m: -1, s: 1 }, tag: "R", r: "Take-up is slow." },
         { t: "Kick it into a review", fx: { s: -3, a: -2 }, r: "'Another review', sigh the charities." }] },
     { id: "sugar", post: "health", title: "Obesity crisis", text: "Doctors say junk food is costing the NHS billions.",
-      opts: [{ t: "Tax sugar and salt in snacks", fx: { m: 3, s: 2, a: -3 }, tag: "L", r: "'Nanny state!' say the papers." },
+      opts: [{ t: "Tax sugar and salt in snacks", tax: 1, fx: { m: 3, s: 2, a: -3 }, tag: "L", r: "'Nanny state!' say the papers." },
         { t: "Free weight-loss jabs on the NHS", fx: { m: -3, s: 3, a: 2 }, tag: "C", r: "Demand is huge." },
         { t: "It's people's own choice", fx: { a: 1, s: -1 }, tag: "R", r: "Nothing changes." }] },
     { id: "dentists", post: "health", title: "Dental deserts", text: "Millions can't find an NHS dentist. Some are pulling their own teeth out.",
@@ -499,7 +509,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Temporary classrooms for now", fx: { m: -2, s: 1 }, r: "Portakabins appear in playgrounds." },
         { t: "Merge and close the worst schools", fx: { m: 2, s: -4, a: -4 }, tag: "R", r: "Parents protest at the gates." }] },
     { id: "fees", post: "edu", title: "University fees debate", text: "Universities say they're going bust. Students say they're drowning in debt.",
-      opts: [{ t: "Scrap tuition fees", fx: { m: -9, a: 6, s: 2 }, tag: "L", r: "Students celebrate across the country." },
+      opts: [{ t: "Scrap tuition fees", later: "fees", fx: { m: -9, a: 6, s: 2 }, tag: "L", r: "Students celebrate across the country." },
         { t: "Raise fees to £12,000", fx: { m: 3, a: -5, s: 2 }, tag: "R", r: "Universities are saved. Students are livid." },
         { t: "Replace fees with a graduate tax", fx: { m: 1, a: 1 }, tag: "C", r: "A tidy reform, slowly phased in." }] },
     { id: "teachers", post: "edu", title: "Teacher shortage", text: "One in four new teachers quits within five years.",
@@ -514,32 +524,32 @@ h1, h2, h3 { margin: 0; }
       opts: [{ t: "Ban phones in all schools", fx: { a: 4, s: 1 }, tag: "P", r: "Teachers say lessons are calmer." },
         { t: "Leave it to head teachers", fx: { a: -1 }, tag: "C", r: "Nothing much changes." }] },
     { id: "privatevat", post: "edu", title: "VAT on private schools", text: "There's pressure to charge VAT on private school fees.",
-      opts: [{ t: "Add VAT and spend it on state schools", fx: { m: 2, s: 2, a: 1 }, tag: "L", r: "Some private schools close." },
+      opts: [{ t: "Add VAT and spend it on state schools", tax: 1, fx: { m: 2, s: 2, a: 1 }, tag: "L", r: "Some private schools close." },
         { t: "Leave private schools alone", fx: { a: -1 }, tag: "R", r: "The row rumbles on." }] },
     { id: "bills", post: "energy", title: "Energy bills soar", text: "Gas prices double after a crisis abroad. Bills could hit £3,000 a year.",
       opts: [{ t: "Subsidise bills for everyone", fx: { m: -10, a: 7, e: 2 }, tag: "P", r: "Households breathe a sigh of relief." },
-        { t: "Windfall tax on energy giants", fx: { m: 5, a: 4, e: -2 }, tag: "L", r: "Oil bosses complain. Voters cheer." },
+        { t: "Windfall tax on energy giants", tax: 1, fx: { m: 5, a: 4, e: -2 }, tag: "L", r: "Oil bosses complain. Voters cheer." },
         { t: "Let the market sort it out", fx: { a: -8, e: -2 }, tag: "R", r: "Pensioners face a cold winter." }] },
     { id: "northsea", post: "energy", title: "North Sea drilling", text: "Energy firms want new oil and gas licences in the North Sea.",
-      opts: [{ t: "Grant new licences", fx: { e: 4, m: 3, a: -1 }, tag: "R", r: "Aberdeen celebrates. Climate groups protest." },
+      opts: [{ t: "Grant new licences", later: "northsea", fx: { e: 4, m: 3, a: -1 }, tag: "R", r: "Aberdeen celebrates. Climate groups protest." },
         { t: "No new licences. Go green", fx: { e: -2, a: 1 }, tag: "G", r: "Green groups applaud." }] },
     { id: "netzero", post: "energy", title: "Net zero deadline", text: "Advisers say Britain will miss its climate targets without action.",
       opts: [{ t: "Speed it up: heat pumps and EV grants", fx: { m: -6, e: 2, a: 1 }, tag: "G", r: "Green jobs boom in the North." },
         { t: "Delay the targets to save families money", fx: { m: 2, a: 3 }, tag: "P", r: "Climate scientists are dismayed." },
         { t: "Stay the course", fx: { m: -2 }, tag: "C", r: "Steady progress." }] },
     { id: "water", post: "energy", title: "Sewage in the sea", text: "Water companies dumped sewage into rivers and beaches thousands of times last year.",
-      opts: [{ t: "Nationalise the worst offender", fx: { m: -6, a: 5, s: 2 }, tag: "L", r: "The bosses are shown the door." },
+      opts: [{ t: "Nationalise the worst offender", later: "water", fx: { m: -6, a: 5, s: 2 }, tag: "L", r: "The bosses are shown the door." },
         { t: "Huge fines and jail for bosses", fx: { m: 2, a: 4 }, tag: "P", r: "Bonuses are scrapped overnight." },
         { t: "Let bills rise to pay for new pipes", fx: { a: -4, s: 3 }, tag: "R", r: "Customers pay up, grudgingly." }] },
     { id: "nuclear", post: "energy", title: "New nuclear power station", text: "A huge nuclear plant is ready to go, but it's billions over budget.",
-      opts: [{ t: "Build it", fx: { m: -8, e: 4 }, r: "Clean power for millions, eventually." },
+      opts: [{ t: "Build it", later: "nuclear", fx: { m: -8, e: 4 }, r: "Clean power for millions, eventually." },
         { t: "Go for small modular reactors instead", fx: { m: -4, e: 2 }, tag: "C", r: "A new British industry is born." },
         { t: "Cancel it", fx: { m: 3, e: -2, a: -1 }, r: "Thousands of jobs are lost." }] },
     { id: "drought", post: "energy", title: "Heatwave and drought", text: "Temperatures hit 40°C and reservoirs are running dry.",
       opts: [{ t: "Build new reservoirs", fx: { m: -4, s: 3, a: 2 }, r: "The first new reservoir in 30 years." },
         { t: "Hosepipe ban", fx: { a: -2 }, r: "Gardeners are cross, but the taps keep flowing." }] },
     { id: "fracking", post: "energy", title: "Fracking returns?", text: "Firms say shale gas could cut bills. Locals fear earthquakes.",
-      opts: [{ t: "Allow fracking", fx: { e: 3, a: -4 }, tag: "R", r: "The first tremor makes the news." },
+      opts: [{ t: "Allow fracking", later: "fracking", fx: { e: 3, a: -4 }, tag: "R", r: "The first tremor makes the news." },
         { t: "Keep the ban", fx: { a: 1 }, tag: "G", r: "Local campaigners are relieved." }] },
     { id: "scotland", title: "Second independence referendum?", text: "Scotland's First Minister demands a new vote on independence.",
       opts: [{ t: "Refuse. Now is not the time", fx: { a: 1, u: 1 }, r: "The row runs and runs." },
@@ -573,8 +583,8 @@ h1, h2, h3 { margin: 0; }
       opts: [{ t: "Extra bank holiday and street parties", fx: { a: 4, e: -1 }, tag: "P", r: "Bunting everywhere." },
         { t: "A low-key service", fx: { a: -1 }, r: "Royalists are a bit put out." }] },
     { id: "ai", title: "AI threatens jobs", text: "A report says AI could replace millions of office jobs within ten years.",
-      opts: [{ t: "Invest in AI and retraining", fx: { m: -4, e: 5 }, tag: "C", r: "Tech firms open new UK offices." },
-        { t: "Tax firms that replace workers with AI", fx: { m: 3, e: -3, a: 3 }, tag: "L", r: "Unions applaud." },
+      opts: [{ t: "Invest in AI and retraining", later: "ai", fx: { m: -4, e: 5 }, tag: "C", r: "Tech firms open new UK offices." },
+        { t: "Tax firms that replace workers with AI", tax: 1, fx: { m: 3, e: -3, a: 3 }, tag: "L", r: "Unions applaud." },
         { t: "Leave it to the market", fx: { e: 2, a: -2 }, tag: "R", r: "Workers are anxious." }] },
     { id: "unions", only: ["lab"], title: "Unions want their say", text: "Big unions demand stronger workers' rights in return for their donations.",
       opts: [{ t: "Pass a workers' rights bill", fx: { u: 6, e: -2 }, tag: "L", r: "The unions are delighted." },
@@ -594,23 +604,23 @@ h1, h2, h3 { margin: 0; }
         { t: "Lower rates for cheaper regions", fx: { e: 1, a: -2 }, tag: "R", r: "The North asks why it's worth less." },
         { t: "Freeze it to protect jobs", fx: { e: 2, a: -5 }, tag: "R", r: "Unions call it a pay cut for the poorest." }] },
     { id: "fourday", post: "chan", title: "Four-day week", text: "A big trial says workers were just as productive on a four-day week.",
-      opts: [{ t: "Trial it across the public sector", fx: { a: 3, s: -1, m: -1 }, tag: "L", r: "Staff are thrilled. Some services get stretched." },
+      opts: [{ t: "Trial it across the public sector", later: "fourday", fx: { a: 3, s: -1, m: -1 }, tag: "L", r: "Staff are thrilled. Some services get stretched." },
         { t: "Tax breaks for firms that try it", fx: { m: -2, e: 1, a: 1 }, tag: "C", r: "Hundreds of companies sign up." },
         { t: "Not in this economy", fx: { e: 1, a: -1 }, tag: "R", r: "Business groups nod approvingly." }] },
     { id: "rail", post: "chan", title: "High-speed rail overruns", text: "The new high-speed line is years late and tens of billions over budget.",
-      opts: [{ t: "Finish the whole line", fx: { m: -9, e: 4 }, r: "The North gets its fast trains, eventually." },
+      opts: [{ t: "Finish the whole line", later: "hs", fx: { m: -9, e: 4 }, r: "The North gets its fast trains, eventually." },
         { t: "Cut the northern leg", fx: { m: 3, a: -4 }, r: "Northern mayors are livid." },
         { t: "Scrap it. Spend it on local buses and trains", fx: { m: 2, s: 3, a: 1 }, tag: "P", r: "Commuters notice the difference within a year." }] },
     { id: "inherit", post: "chan", title: "Inheritance tax row", text: "Families say inheritance tax is unfair. Campaigners say the richest dodge it anyway.",
       opts: [{ t: "Abolish it", fx: { m: -5, a: 2 }, tag: "R", r: "Popular with homeowners, costly for the Treasury." },
-        { t: "Raise it on the biggest estates", fx: { m: 4, a: -1 }, tag: "L", r: "Accountants get busy." },
+        { t: "Raise it on the biggest estates", tax: 1, fx: { m: 4, a: -1 }, tag: "L", r: "Accountants get busy." },
         { t: "Close the loopholes only", fx: { m: 2 }, tag: "C", r: "Quietly effective." }] },
     { id: "councils", post: "chan", title: "Councils going bust", text: "Three big councils say they can't balance their books. Bins and libraries are at risk.",
       opts: [{ t: "Emergency bail-out", fx: { m: -4, s: 3 }, r: "The bins keep getting emptied." },
-        { t: "Let them put council tax up", fx: { a: -3, s: 1 }, tag: "R", r: "Bills land on doormats with a thud." },
+        { t: "Let them put council tax up", tax: 1, fx: { a: -3, s: 1 }, tag: "R", r: "Bills land on doormats with a thud." },
         { t: "Hand councils new tax powers", fx: { m: -1, s: 1, a: -1 }, tag: "C", r: "Some councils use them, some don't." }] },
     { id: "gambling", post: "chan", title: "Online gambling boom", text: "Betting apps are making record profits and problem gambling is rising.",
-      opts: [{ t: "Tax betting firms harder", fx: { m: 4, a: 1 }, tag: "L", r: "The bookies grumble. The Treasury smiles." },
+      opts: [{ t: "Tax betting firms harder", tax: 1, fx: { m: 4, a: 1 }, tag: "L", r: "The bookies grumble. The Treasury smiles." },
         { t: "Ban gambling adverts", fx: { a: 3, e: -1, s: 1 }, tag: "C", r: "Football shirts look very different next season." },
         { t: "Leave it to the industry", fx: { e: 1, a: -2 }, tag: "R", r: "Campaigners are furious." }] },
     { id: "shoplift", post: "home", title: "Shoplifting epidemic", text: "Shop workers say theft is out of control and police don't turn up.",
@@ -646,7 +656,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Hold out for a better deal", fx: { e: 1 }, r: "Talks drag on, but the terms improve." },
         { t: "Walk away over visas", fx: { a: 1 }, tag: "P", r: "The deal goes to France instead." }] },
     { id: "eurovision", post: "foreign", title: "Britain asked to host Eurovision", text: "The organisers want the UK to host next year's contest.",
-      opts: [{ t: "Yes! Host it in style", fx: { m: -1, a: 4, e: 1 }, r: "Glitter everywhere. Hotels are full." },
+      opts: [{ t: "Yes! Host it in style", later: "eurovision", fx: { m: -1, a: 4, e: 1 }, r: "Glitter everywhere. Hotels are full." },
         { t: "Too expensive, sorry", fx: { a: -2 }, r: "Fans are heartbroken." }] },
     { id: "reparations", post: "foreign", title: "Calls for slavery reparations", text: "Commonwealth leaders ask Britain to apologise and pay reparations for slavery.",
       opts: [{ t: "A formal apology", fx: { a: -1, u: -1 }, tag: "L", r: "Welcomed abroad, divisive at home." },
@@ -654,7 +664,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Refuse", fx: { a: 1 }, tag: "R", r: "The summit ends frostily." }] },
     { id: "vapes", post: "health", title: "Teen vaping craze", text: "Doctors warn that one in five teenagers now vapes.",
       opts: [{ t: "Ban disposable vapes", fx: { a: 3, s: 1 }, r: "Parents are relieved." },
-        { t: "Tax them heavily", fx: { m: 2, s: 1 }, tag: "L", r: "Prices jump. Use dips." },
+        { t: "Tax them heavily", tax: 1, fx: { m: 2, s: 1 }, tag: "L", r: "Prices jump. Use dips." },
         { t: "It's better than smoking. Leave it", fx: { a: -2 }, tag: "R", r: "Headteachers despair." }] },
     { id: "mental", post: "health", title: "Youth mental health crisis", text: "Waiting lists for young people's mental health services are over two years long.",
       opts: [{ t: "A counsellor in every school", fx: { m: -3, s: 4, a: 2 }, tag: "L", r: "Children get help where they are." },
@@ -666,7 +676,7 @@ h1, h2, h3 { margin: 0; }
         { t: "Pay training fees for new nurses", fx: { m: -2, s: 2 }, tag: "C", r: "Applications rise." }] },
     { id: "smoking", post: "health", title: "Smoking ban for the next generation", text: "Doctors want it to be illegal to sell cigarettes to anyone born after 2009.",
       opts: [{ t: "Bring in the generational ban", fx: { s: 3, a: 1, u: -2 }, tag: "C", r: "World-leading, say health experts." },
-        { t: "Just raise tobacco tax", fx: { m: 3 }, tag: "L", r: "Smokers pay more." },
+        { t: "Just raise tobacco tax", tax: 1, fx: { m: 3 }, tag: "L", r: "Smokers pay more." },
         { t: "It's a free country", fx: { a: -1 }, tag: "P", r: "Nothing changes." }] },
     { id: "aiexams", post: "edu", title: "AI cheating in exams", text: "Teachers say students are using AI to write their coursework.",
       opts: [{ t: "Back to handwritten exams only", fx: { a: 1, s: -1 }, tag: "R", r: "Exam halls fill up again." },
@@ -703,9 +713,61 @@ h1, h2, h3 { margin: 0; }
       opts: [{ t: "Accept the challenge", fx: { a: 3, u: 1 }, r: "A strong performance. Clips go viral." },
         { t: "Send a minister instead", fx: { a: -2 }, r: "'Chicken!' say the opposition." },
         { t: "Refuse: you're busy governing", fx: { a: -1 }, r: "A few people notice." }] },
+    { id: "potholes", title: "Pothole Britain", text: "Drivers say the roads are falling apart. One pothole in Leeds now has its own fan page.",
+      opts: [{ t: "A £2bn road repair fund", fx: { m: -2, a: 3, s: 1 }, r: "Fresh tarmac appears across the country." },
+        { t: "It's the councils' job", fx: { a: -2 }, r: "The fan page gets bigger." }] },
+    { id: "olympics", title: "Bid for the Olympics?", text: "Sports chiefs want Britain to bid to host the Olympic Games.",
+      opts: [{ t: "Go for it", fx: { m: -4, a: 3, e: 2 }, later: "olympics", r: "The bid is launched with a big London party." },
+        { t: "Too expensive", fx: { a: -1 }, r: "Sports fans are disappointed." }] },
+    { id: "cyber", post: "home", title: "Cyber attack on the NHS", text: "Hackers have locked hospital computers and want a ransom.",
+      opts: [{ t: "Quietly pay the ransom", fx: { m: -1, s: 2, a: -3 }, r: "Systems come back, but it leaks." },
+        { t: "Refuse and rebuild the systems", fx: { m: -3, s: -3, a: 1 }, r: "A painful fortnight for hospitals." },
+        { t: "Create a national cyber force", fx: { m: -4, s: 1, a: 2 }, tag: "R", r: "Hackers think twice next time." }] },
+    { id: "dover", post: "foreign", title: "Lorry queues at Dover", text: "Border checks have caused a 20-mile queue of lorries in Kent.",
+      opts: [{ t: "Do a deal with France on checks", fx: { e: 3, a: -1 }, tag: "C", r: "The queues clear within days." },
+        { t: "Build a giant lorry park", fx: { m: -2, e: 1 }, r: "Kent residents are not amused." }] },
+    { id: "farmers", title: "Farmers on tractors", text: "Hundreds of farmers drive tractors into Westminster, angry about falling incomes.",
+      opts: [{ t: "Raise farm subsidies", fx: { m: -3, a: 2 }, tag: "P", r: "The tractors head home." },
+        { t: "Pay farmers to protect nature", fx: { m: -2, a: 1 }, tag: "G", r: "Hedgerows and wildflowers return." },
+        { t: "Hold firm", fx: { a: -2 }, tag: "R", r: "The tractors stay for a week." }] },
+    { id: "steel", post: "chan", title: "The last steelworks", text: "Britain's last big steelworks will close next month unless the government steps in.",
+      opts: [{ t: "Nationalise it", fx: { m: -5, e: 2, a: 3 }, tag: "L", r: "The furnaces stay lit." },
+        { t: "A subsidy deal with the owners", fx: { m: -3, e: 1 }, tag: "C", r: "A few years' breathing space." },
+        { t: "Let it close", fx: { e: -3, a: -4 }, tag: "R", r: "A whole town loses its biggest employer." }] },
+    { id: "postoffice", title: "Post Office scandal victims", text: "Hundreds of postmasters who were wrongly convicted are still waiting for compensation.",
+      opts: [{ t: "Pay everyone in full, now", fx: { m: -2, a: 5 }, r: "Justice at last, say the postmasters." },
+        { t: "Wait for the inquiry to finish", fx: { a: -3 }, r: "A TV drama about it tops the ratings." }] },
+    { id: "bbc", title: "The BBC licence fee", text: "The BBC's licence fee is up for renewal. Many people say they never watch it.",
+      opts: [{ t: "Scrap the licence fee", fx: { a: 3, s: -1 }, tag: "P", r: "The BBC warns of huge cuts." },
+        { t: "Keep it", fx: { a: -1 }, tag: "C", r: "Not much changes." },
+        { t: "Switch to subscriptions", fx: { e: 1 }, tag: "R", r: "A big change for a national institution." }] },
+    { id: "gps", post: "health", title: "The 8am scramble", text: "Patients say it's impossible to get a GP appointment.",
+      opts: [{ t: "Train 6,000 more GPs", fx: { m: -4, s: 4, a: 2 }, r: "It'll take years, but it's a start." },
+        { t: "Let pharmacists prescribe more", fx: { m: -1, s: 2 }, tag: "C", r: "Queues at chemists, shorter waits at GPs." },
+        { t: "Online GP appointments for all", fx: { m: -2, s: 1 }, r: "Great for some, useless for others." }] },
+    { id: "measles", post: "health", title: "Measles outbreak", text: "Measles is spreading in schools as vaccination rates fall.",
+      opts: [{ t: "A big vaccination drive", fx: { m: -1, s: 2, a: 1 }, r: "Clinics pop up in schools and supermarkets." },
+        { t: "Vaccines required to start school", fx: { s: 3, a: -2 }, tag: "R", r: "Rates soar. So does the backlash." }] },
+    { id: "childcare", post: "edu", title: "Childcare costs", text: "Parents pay more for nurseries than for rent.",
+      opts: [{ t: "30 free hours for every under-5", fx: { m: -5, e: 2, a: 4 }, tag: "L", r: "Parents go back to work." },
+        { t: "Help for the poorest families", fx: { m: -2, a: 1 }, tag: "C", r: "A modest step." },
+        { t: "Not affordable right now", fx: { a: -3 }, r: "Parents are fuming." }] },
+    { id: "send", post: "edu", title: "Special needs crisis", text: "Families wait years for support for children with special needs.",
+      opts: [{ t: "Fund it properly", fx: { m: -4, s: 3, a: 1 }, r: "Waiting lists start to fall." },
+        { t: "Reform the system", fx: { s: 1, a: -2 }, r: "Parents fear support will be cut." }] },
+    { id: "onshore", post: "energy", title: "Onshore wind farms", text: "Onshore wind is the cheapest power there is, but villages don't want turbines next door.",
+      opts: [{ t: "Lift the ban on onshore wind", fx: { e: 2, a: -1 }, tag: "G", r: "Turbines go up on the hills." },
+        { t: "Only where locals agree", fx: { e: 1 }, tag: "C", r: "A handful get built." },
+        { t: "Keep the ban", fx: { a: 1 }, tag: "P", r: "Bills stay high." }] },
+    { id: "coldsnap", post: "energy", title: "Big freeze", text: "Snow and ice grip the country. Pensioners are struggling to heat their homes.",
+      opts: [{ t: "Extra winter fuel payments", fx: { m: -2, a: 3 }, r: "A warm welcome for pensioners." },
+        { t: "Advise people to wrap up warm", fx: { a: -3 }, r: "It goes down very badly." }] },
+    { id: "spaceport", post: "chan", title: "A British spaceport", text: "A company wants to launch rockets from the Scottish Highlands.",
+      opts: [{ t: "Back it with grants", fx: { m: -2, e: 2, a: 1 }, r: "Britain joins the space race." },
+        { t: "Let them go it alone", fx: { e: 1 }, r: "The first launch slips by two years." }] },
   ];
   const BUDGET = { id: "budget", post: "chan", kicker: "Budget Day", title: "It's Budget Day", text: "The Chancellor stands at the despatch box with the famous red box. What's in it?",
-    opts: [{ t: "Tax and invest in public services", fx: { m: 3, s: 7, e: -2, a: -2 }, tag: "L", r: "More money for hospitals and schools, paid for by higher taxes." },
+    opts: [{ t: "Tax and invest in public services", tax: 1, fx: { m: 3, s: 7, e: -2, a: -2 }, tag: "L", r: "More money for hospitals and schools, paid for by higher taxes." },
       { t: "Balance the books", fx: { m: 9, e: 1, s: -2, a: -2 }, tag: "C", r: "Dull but responsible, says the City." },
       { t: "Cut taxes to boost growth", fx: { m: -8, e: 6, s: -2, a: 4 }, tag: "R", r: "Business loves it. The deficit grows." },
       { t: "A giveaway for voters", fx: { m: -11, a: 8, e: 1 }, tag: "P", r: "Popular now, painful later." }] };
@@ -781,6 +843,101 @@ h1, h2, h3 { margin: 0; }
   ];
   const GOOD = ["The House roars. Your MPs wave their order papers!", "A perfect answer. The opposition benches fall silent.", "Spot on. Even some opposition MPs nod along."];
   const BAD = ["It falls flat. The opposition benches jeer.", "Wrong answer for that point. You look rattled.", "The Speaker has to call for order as they laugh at you."];
+  // Rescue events: turn up when something is collapsing, to give you a way back.
+  const RESCUE = [
+    { id: "nhsrescue", when: (s) => s.s < 35, post: "health", kicker: "🚨 Crisis", title: "Public services on their knees", text: "A damning report says hospitals, schools and councils are close to collapse. Voters are furious.",
+      opts: [{ t: "A ten-year rescue plan", fx: { m: -8, s: 10, a: 3 }, r: "Money flows to the front line." },
+        { t: "A tax rise ring-fenced for services", tax: 1, fx: { m: 2, s: 8, a: -3 }, tag: "L", r: "Painful, but it's paying for real improvements." },
+        { t: "Bring in private firms to help", fx: { m: -3, s: 6 }, tag: "R", r: "Waiting lists fall. Unions grumble." }] },
+    { id: "debtcrisis", when: (s) => s.m < -25, post: "chan", kicker: "🚨 Crisis", title: "Credit rating downgrade warning", text: "Ratings agencies warn they'll downgrade Britain unless you get borrowing under control.",
+      opts: [{ t: "Emergency spending cuts", fx: { m: 12, s: -5, a: -4 }, tag: "R", r: "The markets calm down." },
+        { t: "A temporary tax rise", tax: 1, fx: { m: 10, a: -5 }, tag: "L", r: "The deficit shrinks fast." },
+        { t: "Sell off state assets", fx: { m: 8, e: -1, a: -2 }, r: "A one-off windfall." }] },
+    { id: "boom", when: (s) => s.e > 72, post: "chan", kicker: "📈 Boom", title: "The economy is booming", text: "Growth is the fastest in Europe and tax receipts are pouring in.",
+      opts: [{ t: "Bank it to pay down debt", fx: { m: 9 }, tag: "C", r: "Prudent, says the City." },
+        { t: "Spend it on public services", fx: { m: 2, s: 6 }, tag: "L", r: "Hospitals and schools get a boost." },
+        { t: "Give it back in tax cuts", fx: { m: 2, a: 5 }, tag: "R", r: "Voters feel the difference." }] },
+    { id: "smug", when: (s) => s.u > 85, kicker: "Party trouble", title: "Your MPs are getting cocky", text: "With the party so united, backbenchers think they're untouchable. Some are demanding pet projects.",
+      opts: [{ t: "Fund their pet projects", fx: { m: -3, u: 1 }, r: "Bypasses and swimming pools for marginal seats." },
+        { t: "Tell them to get back in line", fx: { u: -8, a: 1 }, r: "Grumbling in the tea room." },
+        { t: "Let them rebel on a minor vote", fx: { u: -5 }, r: "They get it out of their system." }] },
+    { id: "leadership", when: (s) => s.a < 25, kicker: "🚨 Crisis", title: "Can you survive?", text: "Commentators say your premiership is over. You need to change the story, fast.",
+      opts: [{ t: "A big relaunch speech", fx: { a: 4, u: 2 }, r: "A strong speech buys you some time." },
+        { t: "A crowd-pleasing giveaway", fx: { m: -6, a: 6 }, tag: "P", r: "It works, for now." },
+        { t: "Admit mistakes and change course", fx: { a: 3, u: -2 }, tag: "C", r: "Voters appreciate the honesty." }] },
+  ];
+  // Follow-ups: some choices come back a few quarters later. Whether it's good or bad news depends partly on the minister in charge.
+  const FOLLOW = {
+    banknat: { post: "chan", delay: 6,
+      good: { title: "Your people's bank turns a profit", text: "The bank you nationalised is making money again.", opts: [{ t: "Sell it back to investors", fx: { m: 8, a: 1 }, tag: "R", r: "A tidy profit for taxpayers." }, { t: "Keep it as a public bank", fx: { m: 2, e: 2, a: 1 }, tag: "L", r: "Cheap loans for small firms." }] },
+      bad: { title: "The nationalised bank needs £5bn more", text: "The bank you took over is losing money fast.", opts: [{ t: "Put in more money", fx: { m: -5, e: 1 }, r: "Another cheque, another headline." }, { t: "Wind it down", fx: { e: -3, a: -3 }, r: "Customers move their accounts in a panic." }] } },
+    bankbail: { post: "chan", delay: 5,
+      good: { title: "Bailed-out bank pays you back", text: "The bank you rescued has repaid every penny, with interest.", opts: [{ t: "Take the credit", fx: { m: 6, a: 2 }, r: "'The bail-out that worked', says the FT." }] },
+      bad: { title: "Bailed-out bank pays huge bonuses", text: "The bank you rescued has just paid its bosses £50 million in bonuses.", opts: [{ t: "Tax the bonuses", tax: 1, fx: { m: 2, a: 3 }, tag: "L", r: "Bankers are outraged. Voters cheer." }, { t: "Say it's their business", fx: { a: -5 }, tag: "R", r: "It's all over the front pages." }] } },
+    homes: { post: "chan", delay: 6,
+      good: { title: "The first council homes open", text: "Thousands of families move into the new homes you promised.", opts: [{ t: "Build even more", fx: { m: -4, s: 3, a: 3 }, tag: "L", r: "Housebuilding hits a 50-year high." }, { t: "Cut the ribbon and move on", fx: { a: 3 }, r: "Lovely photos for the papers." }] },
+      bad: { title: "Council homes behind schedule", text: "Builders say your homes will be three years late and £4bn over budget.", opts: [{ t: "Pay up to finish them", fx: { m: -4, s: 2 }, r: "They'll get there, slowly." }, { t: "Scale the plan back", fx: { a: -4, u: -2 }, r: "'Broken promise', say the papers." }] } },
+    offshore: { post: "home", delay: 5,
+      good: { title: "Offshore scheme deters crossings", text: "Boat crossings have fallen sharply since your offshore scheme started.", opts: [{ t: "Expand it", fx: { m: -3, a: 3 }, tag: "R", r: "Popular with voters." }, { t: "Claim victory", fx: { a: 3 }, r: "A good week for the government." }] },
+      bad: { title: "Offshore scheme blocked by the courts", text: "Judges rule your offshore processing scheme is unlawful. Millions have already been spent.", opts: [{ t: "Pass a law to overrule them", fx: { a: 2, u: -3 }, tag: "P", r: "Lawyers are up in arms." }, { t: "Scrap it", fx: { a: -4, m: 2 }, r: "Critics say it was a waste of money." }] } },
+    prisons: { post: "home", delay: 6,
+      good: { title: "New prisons open on time", text: "Your mega-prisons are open, and the overcrowding crisis is easing.", opts: [{ t: "Great news", fx: { s: 3, a: 2 }, r: "Judges can sentence properly again." }] },
+      bad: { title: "Prison building sites stall", text: "The construction firm building your prisons has gone bust.", opts: [{ t: "Take over the building work", fx: { m: -4, s: 1 }, r: "Work restarts after months of delay." }, { t: "Release more prisoners early", fx: { a: -6 }, r: "A grim headline." }] } },
+    nuclear: { post: "energy", delay: 7,
+      good: { title: "The nuclear plant switches on", text: "Your new power station is generating clean power for millions of homes.", opts: [{ t: "Order another one", fx: { m: -5, e: 3 }, r: "Britain's nuclear revival is under way." }, { t: "Celebrate", fx: { a: 3, e: 2 }, r: "Bills start to fall." }] },
+      bad: { title: "Nuclear plant delayed again", text: "Your power station is now five years late and £10bn over budget.", opts: [{ t: "Keep going", fx: { m: -5 }, r: "Too late to turn back." }, { t: "Mothball it", fx: { m: 2, e: -3, a: -3 }, r: "A huge concrete hole in the ground." }] } },
+    hs: { post: "chan", delay: 7,
+      good: { title: "High-speed trains start running", text: "The first trains on your new line cut journey times in half.", opts: [{ t: "Ride the first train", fx: { a: 4, e: 2 }, r: "Great pictures, happy commuters." }] },
+      bad: { title: "High-speed rail costs spiral again", text: "The line needs another £15bn to finish.", opts: [{ t: "Find the money", fx: { m: -6, e: 1 }, r: "The Treasury groans." }, { t: "Stop at Birmingham", fx: { m: 2, a: -5 }, r: "The North feels betrayed." }] } },
+    fees: { post: "edu", delay: 5,
+      good: { title: "University applications soar", text: "Since you scrapped tuition fees, more working-class students than ever are going to university.", opts: [{ t: "Brilliant", fx: { a: 3, e: 1 }, r: "A proud moment." }] },
+      bad: { title: "Universities going bust", text: "Without fee income, three universities say they'll go bust this year.", opts: [{ t: "Bail them out", fx: { m: -4, s: 2 }, r: "The lecture halls stay open." }, { t: "Let them merge or close", fx: { s: -3, a: -3 }, r: "Students face months of uncertainty." }] } },
+    eurovision: { delay: 3,
+      good: { title: "Eurovision is a triumph", text: "The contest you hosted was watched by 200 million people. Tourism is booming.", opts: [{ t: "Douze points!", fx: { a: 3, e: 2 }, r: "Britain basks in the glow." }] },
+      bad: { title: "Eurovision goes over budget", text: "The contest cost twice what was promised, and Britain came last.", opts: [{ t: "Nul points", fx: { m: -1, a: -2 }, r: "Ouch." }] } },
+    cannabis: { post: "home", delay: 5,
+      good: { title: "Legal cannabis: crime falls", text: "Police say drug-related crime is down since you legalised cannabis.", opts: [{ t: "Good news", fx: { a: 2, m: 2 }, r: "Other countries come to study it." }] },
+      bad: { title: "Legal cannabis: hospital admissions up", text: "Doctors report a rise in young people with cannabis-related problems.", opts: [{ t: "Tighten the rules", fx: { a: 1, s: 1 }, r: "Sensible tweaks." }, { t: "Ban it again", fx: { a: -2, u: -2 }, r: "A screeching U-turn." }] } },
+    fourday: { post: "chan", delay: 5,
+      good: { title: "Four-day week a success", text: "Your trial shows staff are happier and just as productive.", opts: [{ t: "Roll it out further", fx: { a: 3, e: 1 }, tag: "L", r: "Long weekends for millions." }] },
+      bad: { title: "Four-day week causes chaos", text: "Councils say the trial has left services short-staffed.", opts: [{ t: "End the trial", fx: { a: -2, s: 2 }, r: "Workers are disappointed." }, { t: "Hire more staff", fx: { m: -3, s: 2 }, r: "Expensive, but it works." }] } },
+    ai: { post: "chan", delay: 5,
+      good: { title: "AI investment pays off", text: "Britain has become Europe's biggest AI hub. Thousands of new jobs.", opts: [{ t: "Brilliant", fx: { e: 4, m: 2 }, r: "Silicon Valley takes notice." }] },
+      bad: { title: "AI firm you backed collapses", text: "The AI company you gave grants to has gone bust, taking public money with it.", opts: [{ t: "Learn the lessons", fx: { a: -3, m: -1 }, r: "Embarrassing." }] } },
+    water: { post: "energy", delay: 5,
+      good: { title: "Beaches clean again", text: "Sewage spills have fallen sharply since you took over the water company.", opts: [{ t: "Take a swim for the cameras", fx: { a: 4 }, r: "A splash on the front pages." }] },
+      bad: { title: "Nationalised water costs more", text: "The water company you took over needs billions to fix its pipes.", opts: [{ t: "Pay for it", fx: { m: -5, s: 2 }, r: "A long-term fix." }, { t: "Put bills up", fx: { a: -4 }, r: "Customers are not happy." }] } },
+    troops: { post: "foreign", delay: 4,
+      good: { title: "Troops deter an invasion", text: "With British troops in place, the threat has passed. Allies are grateful.", opts: [{ t: "Bring them home as heroes", fx: { a: 4 }, r: "A parade down the Mall." }] },
+      bad: { title: "Troops stuck in a long stand-off", text: "British troops are still deployed and the cost is mounting.", opts: [{ t: "Stay the course", fx: { m: -3, a: -1 }, r: "Allies appreciate it." }, { t: "Bring them home", fx: { a: -2 }, r: "Allies are worried." }] } },
+    lockdown: { post: "health", delay: 3,
+      good: { title: "Early lockdown saved lives", text: "Scientists say your quick action kept the virus under control.", opts: [{ t: "Reopen carefully", fx: { e: 3, a: 3 }, r: "Shops and pubs open again." }] },
+      bad: { title: "Lockdown anger grows", text: "Businesses are closing and people are fed up with restrictions.", opts: [{ t: "Reopen now", fx: { e: 3, s: -2 }, r: "Cases tick up." }, { t: "Support grants for business", fx: { m: -5, e: 2 }, r: "Expensive, but it helps." }] } },
+    customs: { post: "foreign", delay: 5,
+      good: { title: "Customs union boosts trade", text: "Exports to Europe are up 20% since you joined the customs union.", opts: [{ t: "Great news", fx: { e: 4 }, r: "Factories take on staff." }] },
+      bad: { title: "Customs union row", text: "Leave voters say you've betrayed Brexit. Protests are growing.", opts: [{ t: "Stand firm", fx: { a: -3, e: 1 }, r: "The row rumbles on." }, { t: "Promise a referendum", fx: { a: 2, u: -4 }, r: "Your MPs are stunned." }] } },
+    northsea: { post: "energy", delay: 5,
+      good: { title: "North Sea gas lowers bills", text: "New fields are producing and energy bills have fallen.", opts: [{ t: "Good news", fx: { a: 3, m: 2 }, r: "A rare bit of good energy news." }] },
+      bad: { title: "Oil spill in the North Sea", text: "A new rig has leaked oil. Seabirds are washing up on beaches.", opts: [{ t: "Make the firm pay", fx: { a: 1, m: 2 }, r: "A hefty fine." }, { t: "Pause new drilling", fx: { e: -2, a: 2 }, tag: "G", r: "Green groups welcome it." }] } },
+    fracking: { post: "energy", delay: 4,
+      good: { title: "Shale gas cuts bills", text: "Fracking is producing cheap gas without problems.", opts: [{ t: "Expand it", fx: { e: 3, a: -1 }, tag: "R", r: "More rigs go up." }] },
+      bad: { title: "Fracking quake shakes a village", text: "A small earthquake cracks walls in a Lancashire village.", opts: [{ t: "Ban it again", fx: { a: 2, e: -1 }, r: "Villagers are relieved." }, { t: "Pay compensation and carry on", fx: { m: -1, a: -4 }, r: "Locals are furious." }] } },
+    olympics: { delay: 6,
+      good: { title: "Britain wins the Olympics bid!", text: "The Olympic Games are coming home. The country goes wild.", opts: [{ t: "Celebrate", fx: { a: 5, e: 2 }, r: "Bunting, buses and beaming faces." }] },
+      bad: { title: "Olympic bid fails", text: "The Games have gone to another country after a costly bid.", opts: [{ t: "Better luck next time", fx: { a: -2 }, r: "A deflating moment." }] } },
+  };
+  // Manifesto promises: pick three before each term. Kept ones win votes at the election, broken ones lose them.
+  const PLEDGES = [
+    { id: "services", t: "Fix public services", d: "Public services at 55 or more", kept: (r) => r.stats.s >= 55, now: (r) => "Services " + r.stats.s + " / 55" },
+    { id: "growth", t: "Grow the economy", d: "Economy at 60 or more", kept: (r) => r.stats.e >= 60, now: (r) => "Economy " + r.stats.e + " / 60" },
+    { id: "books", t: "Balance the books", d: "Treasury at £0bn or more", kept: (r) => r.stats.m >= 0, now: (r) => "Treasury " + fmtBn(r.stats.m) },
+    { id: "notax", t: "No tax rises", d: "Never choose a tax rise", kept: (r) => !r.ts.tax, lost: (r) => r.ts.tax, now: (r) => (r.ts.tax ? "Broken" : "Kept so far") },
+    { id: "popular", t: "Govern for everyone", d: "Approval at 50 or more", kept: (r) => r.stats.a >= 50, now: (r) => "Approval " + r.stats.a + " / 50" },
+    { id: "united", t: "A united party", d: "Party unity at 60 or more", kept: (r) => r.stats.u >= 60, now: (r) => "Unity " + r.stats.u + " / 60" },
+    { id: "laws", t: "Get things done", d: "Pass 4 laws in the Commons", kept: (r) => r.ts.bills >= 4, now: (r) => r.ts.bills + " / 4 laws passed" },
+    { id: "debates", t: "Win the arguments", d: "Win 5 Commons debates", kept: (r) => r.ts.wins >= 5, now: (r) => r.ts.wins + " / 5 debates won" },
+  ];
+  const PLEDGE = Object.fromEntries(PLEDGES.map((x) => [x.id, x]));
   const SCANDALS = ["in expenses row", "caught on hot mic", "in leaked messages storm", "in second-jobs scandal", "in undeclared gifts row", "breaks the ministerial code"];
 
   // ---------- save
@@ -958,7 +1115,7 @@ h1, h2, h3 { margin: 0; }
   $("cabBack").onclick = () => { if (!run.hired) renderParties(); else renderGame(); };
   $("formBtn").onclick = () => {
     if (!run.hired) {
-      run.hired = true; run.phase = "event"; buildQuarter(); persist(); buzz(30);
+      run.hired = true; run.phase = "manifesto"; run.pickPledges = []; persist(); buzz(30);
     }
     renderGame();
   };
@@ -1033,10 +1190,29 @@ h1, h2, h3 { margin: 0; }
 
   // ---------- turns
   function drawEvent() {
+    // Something collapsing? A rescue event turns up (at most once every six quarters each).
+    run.rescued = run.rescued || {};
+    const help = RESCUE.filter((ev) => ev.when(run.stats) && !(ev.id in run.rescued && absQ() - run.rescued[ev.id] < 6));
+    if (help.length && Math.random() < 0.6) {
+      const ev = pick(help); run.rescued[ev.id] = absQ();
+      const copy = Object.assign({}, ev); delete copy.when;
+      return JSON.parse(JSON.stringify(copy));
+    }
     let pool = EVENTS.filter((ev) => !run.used.includes(ev.id) && (!ev.only || ev.only.includes(run.party)));
     if (!pool.length) { run.used = []; pool = EVENTS.filter((ev) => !ev.only || ev.only.includes(run.party)); }
-    const ev = pick(pool); run.used.push(ev.id);
-    return JSON.parse(JSON.stringify(ev));
+    const ev = JSON.parse(JSON.stringify(pick(pool))); run.used.push(ev.id);
+    run.seen = run.seen || [];
+    if (run.seen.includes(ev.id)) ev.again = true; else run.seen.push(ev.id);
+    return ev;
+  }
+  function followUp() {
+    const due = (run.pending || []).find((f) => f.at <= absQ());
+    if (!due) return null;
+    run.pending = run.pending.filter((f) => f !== due);
+    const F = FOLLOW[due.key];
+    const good = Math.random() < 0.35 + 0.1 * skillOf(F.post);
+    const v = JSON.parse(JSON.stringify(good ? F.good : F.bad));
+    return Object.assign(v, { id: "f-" + due.key, post: F.post, kicker: "🔁 Follow-up" + (F.post ? " · " + POST[F.post].title : "") });
   }
   function ministerEvent() {
     const list = POSTS.map((p) => run.cabinet[p.id]).filter(Boolean);
@@ -1061,6 +1237,7 @@ h1, h2, h3 { margin: 0; }
   function buildQuarter() {
     const q = [];
     if (run.q % 4 === 3) q.push(JSON.parse(JSON.stringify(BUDGET)));
+    const fu = followUp(); if (fu) q.push(fu);
     while (q.length < 2) {
       const mev = q.length === 1 && Math.random() < 0.3 ? ministerEvent() : null;
       q.push(mev || drawEvent());
@@ -1091,7 +1268,7 @@ h1, h2, h3 { margin: 0; }
     return (d.a || 0) * need(s.a) + 0.7 * (d.u || 0) * need(s.u) + 0.8 * (d.e || 0) * need(s.e) + 0.8 * (d.s || 0) * need(s.s) + money * (d.m || 0);
   }
   function advice(ev) {
-    if (ev.noAdvice) return null;
+    if (ev.noAdvice || ev.opts.length < 2) return null;   // nothing to advise on
     const k = skillOf(ev.post), m = ev.post ? run.cabinet[ev.post] : null;
     if (ev.post && !m) return { none: true };
     let best = 0; ev.opts.forEach((o, i) => { if (value(effect(o, ev)) > value(effect(ev.opts[best], ev))) best = i; });
@@ -1102,10 +1279,12 @@ h1, h2, h3 { margin: 0; }
   }
 
   const term = () => (run && run.term) || 1;
+  const absQ = () => (term() - 1) * QUARTERS + run.q;
+  const termStats = () => (run.ts = run.ts || { bills: 0, wins: 0, tax: false });
   function quarterLabel(q) { return SEASONS[q % 4] + " " + (2027 + (term() - 1) * 5 + Math.floor(q / 4)); }
   function voteShare(st) {
     const s = st || run.stats;
-    let v = 0.12 + s.a * 0.0045 + (s.e - 50) * 0.0015 + (s.s - 50) * 0.0012 + (s.u - 50) * 0.0006 + (s.m < -20 ? -0.015 : 0);
+    let v = 0.12 + s.a * 0.0045 + (s.e - 50) * 0.0015 + (s.s - 50) * 0.0018 + (s.u - 50) * 0.0006 - clamp(-s.m - 10, 0, 70) * 0.0005;
     return clamp(v, 0.05, 0.62);
   }
   const seatsFor = (share) => Math.round(650 / (1 + Math.exp(-(share - 0.33) * 12)));
@@ -1151,6 +1330,7 @@ h1, h2, h3 { margin: 0; }
     else if (run.phase === "result") stage.appendChild(resultCard());
     else if (run.phase === "quarter") stage.appendChild(quarterCard());
     else if (run.phase === "won") stage.appendChild(wonCard());
+    else if (run.phase === "manifesto") stage.appendChild(manifestoCard());
     else if (run.phase === "over") stage.appendChild(endCard());
     const b = stage.querySelector("button"); if (b) b.focus({ preventScroll: true });
   }
@@ -1161,8 +1341,8 @@ h1, h2, h3 { margin: 0; }
     kick.appendChild(el("span", null, ev.kicker || (ev.post ? POST[ev.post].icon + " " + POST[ev.post].title : "🏛️ Prime Minister")));
     kick.appendChild(el("span", null, "Decision " + (run.ei + 1) + " of " + run.queue.length));
     paper.appendChild(kick);
-    paper.appendChild(el("h2", null, ev.title));
-    paper.appendChild(el("p", null, ev.text));
+    paper.appendChild(el("h2", null, (ev.again ? "Again: " : "") + ev.title));
+    paper.appendChild(el("p", null, (ev.again ? "It's happening again. " : "") + ev.text));
     const adv = advice(ev);
     if (adv) {
       const box = el("div", "advice");
@@ -1185,7 +1365,9 @@ h1, h2, h3 { margin: 0; }
     const opts = el("div", "opts");
     ev.opts.forEach((o, i) => {
       const b = el("button", "opt" + (adv && adv.idx === i && !adv.none ? " rec" : "")); b.type = "button";
-      b.appendChild(el("span", null, o.t));
+      const lab = el("span", null, o.t);
+      if (o.tax && run.manifesto && run.manifesto.includes("notax") && !termStats().tax) lab.appendChild(el("span", "broke", "📜 Breaks your no-tax-rises promise"));
+      b.appendChild(lab);
       const keys = Object.keys(o.fx || {}).filter((k) => o.fx[k]);
       if (o.tag && !keys.includes("u")) keys.push("u");
       const fx = el("span", "fx", STATS.filter((s) => keys.includes(s.k)).map((s) => s.icon).join(""));
@@ -1211,6 +1393,8 @@ h1, h2, h3 { margin: 0; }
         if (opt.loyal) m.loyalty = clamp(m.loyalty + opt.loyal, 1, 5);
       }
     }
+    if (opt.tax) termStats().tax = true;
+    if (opt.later && FOLLOW[opt.later]) { run.pending = run.pending || []; run.pending.push({ key: opt.later, at: absQ() + FOLLOW[opt.later].delay }); }
     run.last = { title: ev.title, choice: opt.t, r: opt.r, d, vacancy: note };
     run.phase = "result"; persist();
     buzz(20);
@@ -1218,6 +1402,49 @@ h1, h2, h3 { margin: 0; }
     if (checkCollapse()) return;
   }
 
+
+  // ---------- manifesto
+  function manifestoCard() {
+    const paper = el("article", "paper"), picked = run.pickPledges || (run.pickPledges = []);
+    const kick = el("div", "kick"); kick.appendChild(el("span", null, "📜 Manifesto")); kick.appendChild(el("span", null, term() > 1 ? "Term " + term() : "Your first term"));
+    paper.appendChild(kick);
+    paper.appendChild(el("h2", null, "Write your manifesto"));
+    paper.appendChild(el("p", null, "Pick 3 promises to the country. At the next election, every promise you've kept wins you votes, and every one you've broken costs you."));
+    const list = el("div", "opts");
+    PLEDGES.forEach((pl) => {
+      const on = picked.includes(pl.id);
+      const b = el("button", "pledge"); b.type = "button"; b.setAttribute("aria-pressed", String(on));
+      b.appendChild(el("span", "tick", on ? "✓" : ""));
+      const t = el("span"); t.append(el("b", null, pl.t), el("small", null, pl.d)); b.appendChild(t);
+      b.onclick = () => {
+        if (on) run.pickPledges = picked.filter((x) => x !== pl.id);
+        else if (picked.length < 3) picked.push(pl.id);
+        persist(); renderGame();
+        const again = $("stage").querySelectorAll(".pledge")[PLEDGES.indexOf(pl)]; if (again) again.focus({ preventScroll: true });
+      };
+      list.appendChild(b);
+    });
+    paper.appendChild(list);
+    const go = el("button", "btn wide", picked.length === 3 ? "Publish your manifesto" : "Pick " + (3 - picked.length) + " more"); go.type = "button"; go.style.marginTop = "14px";
+    go.disabled = picked.length !== 3;
+    go.onclick = () => { run.manifesto = picked.slice(); run.ts = { bills: 0, wins: 0, tax: false }; delete run.pickPledges; buildQuarter(); persist(); renderGame(); window.scrollTo(0, 0); };
+    paper.appendChild(go);
+    return paper;
+  }
+  function manifestoList(paper, final) {
+    if (!run.manifesto) return;
+    termStats();
+    const box = el("div", "mlist");
+    run.manifesto.forEach((id) => {
+      const pl = PLEDGE[id]; if (!pl) return;
+      const ok = pl.kept(run), row = el("div");
+      row.append(el("span", null, (ok ? "✅ " : final || (pl.lost && pl.lost(run)) ? "❌ " : "⏳ ") + pl.t), el("span", null, final ? (ok ? "Kept" : "Broken") : pl.now(run)));
+      box.appendChild(row);
+    });
+    paper.appendChild(el("span", "label", final ? "Your manifesto" : "Manifesto promises"));
+    paper.appendChild(box);
+  }
+  const manifestoSwing = () => (run.manifesto || []).reduce((t, id) => t + (PLEDGE[id] && PLEDGE[id].kept(run) ? 0.025 : -0.02), 0);
 
   // ---------- Commons debates
   function mainOpposition() {
@@ -1311,6 +1538,7 @@ h1, h2, h3 { margin: 0; }
 
   function finishDebate(ev, skipped) {
     const d = ev.d, res = skipped ? "skip" : ev.meter >= 20 ? "win" : ev.meter <= -20 ? "lose" : "draw";
+    if (res === "win") termStats().wins++;
     const verdict = { win: "You won the debate.", draw: "The debate ended level.", lose: "You lost the debate.", skip: "" }[res];
     let opt, r, vote = null;
     if (skipped) {
@@ -1321,7 +1549,7 @@ h1, h2, h3 { margin: 0; }
       const ayes = Math.round(seats * clamp(0.75 + run.stats.u * 0.0022, 0.75, 0.97) + others * { win: 0.3, draw: 0.12, lose: 0.03 }[res]);
       const noes = 642 - ayes;   // a few abstain, and the Speaker doesn't vote
       vote = { ayes, noes };
-      if (ayes > noes) { opt = { fx: d.pass, tag: d.tag }; r = "The " + d.title + " passes! " + ayes + " votes to " + noes + "."; }
+      if (ayes > noes) { termStats().bills++; opt = { fx: d.pass, tag: d.tag }; r = "The " + d.title + " passes! " + ayes + " votes to " + noes + "."; }
       else { opt = { fx: { a: -3, u: -3 } }; r = "Defeated! The " + d.title + " falls by " + (noes - ayes) + " votes."; }
     } else {
       opt = { fx: { win: { a: 4, u: 2 }, draw: { a: 1 }, lose: { a: -4, u: -2 } }[res] };
@@ -1388,7 +1616,7 @@ h1, h2, h3 { margin: 0; }
     s.m += 2 + (s.e - 50) * 0.1 + (s.m < 0 ? s.m * 0.04 : 0);
     s.e += (50 - s.e) * 0.06 + (skillOf("chan") - 3) * 0.7 + rnd(-2, 2);
     s.s += -1 + ((skillOf("health") + skillOf("edu")) / 2 - 3) * 0.7;
-    s.u += (avg("loyalty") - 3) * 1.6 + (p.unityDrift || 0) - vacant * 0.8;
+    s.u += (avg("loyalty") - 3) * 1.6 + (p.unityDrift || 0) - vacant * 0.8 + (55 - s.u) * 0.08;   // MPs never stay totally happy (or furious) for long
     const target = 0.35 * s.e + 0.35 * s.s + 0.15 * s.u + 8 + (avg("media") - 3) * 4;
     s.a += (target - s.a) * 0.18 - 0.7 - 0.35 * (term() - 1);   // governing wears you down, and voters tire of you each term
     ["a", "u", "e", "s"].forEach((k) => { s[k] = clamp(Math.round(s[k]), 0, 100); });
@@ -1420,6 +1648,7 @@ h1, h2, h3 { margin: 0; }
     const share = voteShare(), seats = seatsFor(share);
     const pol = el("p", null, "If there were an election tomorrow, you'd get about " + Math.round(share * 100) + "% of the vote and " + seats + " seats. You need 326 for a majority.");
     pol.style.marginTop = "12px"; paper.appendChild(pol);
+    manifestoList(paper, false);
     if (run.bonusUp) {
       const up = el("p", null, "📈 Strong economy! Your Cabinet budget has grown to " + fmtK(cabBudget()) + ", so you can afford better ministers. Tap 👥 to reshuffle.");
       up.style.fontWeight = "800"; up.style.color = "#0d6b38"; paper.appendChild(up);
@@ -1449,7 +1678,8 @@ h1, h2, h3 { margin: 0; }
 
   function election() {
     // A little uncertainty on the night.
-    const share = clamp(voteShare() + rnd(-0.02, 0.02), 0.05, 0.62);
+    run.kept = (run.manifesto || []).map((id) => [id, PLEDGE[id] ? PLEDGE[id].kept(run) : false]);
+    const share = clamp(voteShare() + manifestoSwing() + rnd(-0.02, 0.02), 0.05, 0.62);
     const seats = seatsFor(share);
     finish({ ousted: false, share, seats });
   }
@@ -1492,7 +1722,7 @@ h1, h2, h3 { margin: 0; }
   function nextTerm() {
     run.term = term() + 1; run.q = 0; run.end = null;
     run.stats.a = clamp(run.stats.a + 5, 0, 100); run.stats.u = clamp(run.stats.u + 5, 0, 100);   // a post-election honeymoon
-    buildQuarter(); persist(); renderGame(); window.scrollTo(0, 0);
+    run.phase = "manifesto"; run.pickPledges = []; run.kept = null; persist(); renderGame(); window.scrollTo(0, 0);
   }
   function retire() {
     const wins = term();
@@ -1522,6 +1752,14 @@ h1, h2, h3 { margin: 0; }
     (function tick(t) { const k = Math.min(1, (t - t0) / 1400); big.textContent = Math.round(seats * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); })(t0);
     const need = el("p", null, "326 seats needed for a majority."); need.style.marginTop = "8px"; need.style.fontSize = ".88rem"; paper.appendChild(need);
   }
+  function manifestoResult(paper) {
+    if (!run.kept || !run.kept.length) return;
+    const n = run.kept.filter((k) => k[1]).length;
+    paper.appendChild(el("span", "label", "Your manifesto: " + n + " of " + run.kept.length + " promises kept"));
+    const box = el("div", "mlist");
+    run.kept.forEach(([id, ok]) => { const row = el("div"); row.append(el("span", null, (ok ? "✅ " : "❌ ") + PLEDGE[id].t), el("span", null, ok ? "Kept: + votes" : "Broken: − votes")); box.appendChild(row); });
+    paper.appendChild(box);
+  }
   const ORD = ["first", "second", "third", "fourth", "fifth", "sixth"];
   const outline = (b) => { b.style.background = "transparent"; b.style.color = "var(--paperInk)"; b.style.boxShadow = "inset 0 0 0 2px var(--paperInk)"; };
 
@@ -1534,6 +1772,7 @@ h1, h2, h3 { margin: 0; }
     paper.appendChild(el("h2", null, E.title));
     paper.appendChild(el("p", null, E.text));
     seatChart(paper, E.seats, E.share);
+    manifestoResult(paper);
     const sc = el("div"); sc.style.margin = "14px 0";
     sc.appendChild(el("span", "label", "Career score so far"));
     const n = el("div", "bigseats", run.career.toLocaleString("en-GB")); n.style.fontSize = "2.6rem"; sc.appendChild(n);
@@ -1559,7 +1798,7 @@ h1, h2, h3 { margin: 0; }
     const v = el("div"); v.style.marginTop = "12px"; v.appendChild(el("span", "verdict", E.verdict)); paper.appendChild(v);
     paper.appendChild(el("h2", null, E.title));
     paper.appendChild(el("p", null, E.text));
-    if (!E.ousted && !E.retired) seatChart(paper, E.seats, E.share);
+    if (!E.ousted && !E.retired) { seatChart(paper, E.seats, E.share); manifestoResult(paper); }
     const qs = E.quarters != null ? E.quarters : QUARTERS, years = qs / 4, wins = term() - 1 + (E.retired ? 1 : 0);
     paper.appendChild(el("p", null, "You spent " + (years < 1 ? qs + (qs === 1 ? " quarter" : " quarters") : (Math.round(years * 4) / 4) + (years === 1 ? " year" : " years"))
       + " in Downing Street and won " + wins + (wins === 1 ? " election." : " elections.")));
@@ -1605,6 +1844,9 @@ h1, h2, h3 { margin: 0; }
       "Every other quarter there's a Commons debate against a rival leader. Answer a statistic with facts, a sad story with a story, and a personal dig with a joke. Attacking is a gamble.",
       "Your own bills then go to a vote. Win the debate to win over other MPs, and keep unity up so your own MPs don't rebel.",
       "Tap 👥 any time to reshuffle your Cabinet."]);
+    add("Manifesto and follow-ups", ["Before each term, pick 3 manifesto promises. Kept promises win votes at the election; broken ones lose them. The quarterly report shows how you're doing.",
+      "Some decisions come back a few quarters later as good or bad news. A skilled minister makes good news more likely.",
+      "If services, the Treasury or your approval are collapsing, rescue events give you a chance to turn things round."]);
     add("4. Don't get thrown out", ["Unity 10 or below: your MPs oust you.", "Approval 12 or below: you lose a confidence vote.", "Treasury −£60bn or below: the markets panic."]);
     add("5. Win the election", ["After 20 quarters the country votes. You need 326 of 650 seats for a majority.",
       "Win (or scrape a coalition) and you can serve another term, up to five. Voters get a bit more tired of you each time.",
