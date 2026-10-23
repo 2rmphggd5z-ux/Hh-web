@@ -90,6 +90,7 @@ h1, h2, h3 { margin: 0; }
 .bar { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .1); overflow: hidden; margin-top: 8px; }
 .bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width .35s ease; }
 .bar i.warn { background: #ffb020; } .bar i.over { background: var(--bad); }
+.budget .bonus { margin-top: 6px; font-size: .82rem; color: var(--muted); font-weight: 700; }
 .posts { display: grid; gap: 10px; }
 .post { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 2px solid var(--line); background: rgba(255, 255, 255, .04);
   border-radius: 16px; padding: 10px 12px; cursor: pointer; }
@@ -130,7 +131,31 @@ h1, h2, h3 { margin: 0; }
 .hud { position: sticky; top: 0; z-index: 5; background: var(--bg); margin: calc(-14px - env(safe-area-inset-top, 0px)) -16px 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
   border-bottom: 1px solid var(--line); }
 .hudtop { display: flex; align-items: center; gap: 10px; }
-.badge { background: var(--party); color: var(--partyInk); font-weight: 900; font-size: .78rem; padding: 4px 10px; border-radius: 99px; letter-spacing: .04em; }
+.badge { background: var(--party); color: var(--partyInk); font-weight: 900; font-size: .78rem; padding: 4px 10px; border-radius: 99px; letter-spacing: .04em;
+  max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcard.own { background: transparent; border: 2px dashed var(--line); border-left: 10px solid var(--gold); }
+.field { display: grid; gap: 8px; margin-bottom: 18px; }
+.field input[type=text] { width: 100%; font: inherit; font-size: 1.05rem; font-weight: 700; color: #fff; background: var(--bg2); border: 2px solid var(--line);
+  border-radius: 14px; padding: 12px 14px; }
+.field input[type=text]::placeholder { color: rgba(255, 255, 255, .4); }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); }
+.swatch[aria-pressed="true"] { border-color: #fff; transform: scale(1.1); }
+.range { width: 100%; height: 34px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; }
+.range::-webkit-slider-runnable-track { height: 12px; border-radius: 99px; background: linear-gradient(90deg, #d50000, #9c6ad6 50%, #0a3d91); }
+.range::-moz-range-track { height: 12px; border-radius: 99px; background: linear-gradient(90deg, #d50000, #9c6ad6 50%, #0a3d91); }
+.range::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -9px; border-radius: 50%; background: #fff; border: 4px solid var(--party); box-shadow: 0 3px 8px rgba(0, 0, 0, .4); }
+.range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 4px solid var(--party); }
+.ends { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; color: var(--muted); font-weight: 700; }
+.ends b { color: #fff; font-size: 1.05rem; }
+.leans { background: var(--bg2); border-radius: 14px; padding: 10px 12px; font-size: .9rem; line-height: 1.45; color: var(--muted); }
+.leans b { color: #fff; }
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chip { text-align: left; border: 2px solid var(--line); background: rgba(255, 255, 255, .04); border-radius: 14px; padding: 10px 12px; cursor: pointer; }
+.chip b { display: block; }
+.chip small { color: var(--muted); font-size: .8rem; }
+.chip[aria-pressed="true"] { border-color: var(--gold); background: rgba(217, 180, 90, .14); }
+.preview { color: var(--muted); font-size: .88rem; line-height: 1.5; text-align: center; }
 .when { flex: 1; min-width: 0; }
 .when b { display: block; font-size: 1rem; }
 .when small { color: var(--muted); font-size: .8rem; }
@@ -217,6 +242,24 @@ h1, h2, h3 { margin: 0; }
   <div class="parties" id="parties"></div>
 </section>
 
+<!-- Create your own party -->
+<section class="wrap" id="ownScreen" hidden>
+  <div class="top"><button class="iconbtn" type="button" id="ownBack" aria-label="Back">←</button><h2>Create your party</h2></div>
+  <label class="field"><span class="label">Party name</span>
+    <input type="text" id="ownName" maxlength="24" placeholder="e.g. The People's Party" autocomplete="off" spellcheck="false"></label>
+  <div class="field"><span class="label">Party colour</span><div class="swatches" id="ownColours"></div></div>
+  <div class="field"><span class="label" id="posLabel">Where do you stand?</span>
+    <input class="range" type="range" id="ownPos" min="-100" max="100" step="5" value="0" aria-labelledby="posLabel">
+    <div class="ends"><span>Left</span><b id="ownPosText">Centre</b><span>Right</span></div>
+    <div class="leans" id="ownLeans"></div>
+  </div>
+  <div class="field"><span class="label">Your big focus</span><div class="chips" id="ownFocus"></div></div>
+  <div class="footer">
+    <div class="preview" id="ownPreview"></div>
+    <button class="btn party wide" id="ownGo" type="button">Launch your party</button>
+  </div>
+</section>
+
 <!-- Cabinet -->
 <section class="wrap" id="cabScreen" hidden>
   <div class="top"><button class="iconbtn" type="button" id="cabBack" aria-label="Back">←</button><h2 id="cabTitle">Form your Cabinet</h2></div>
@@ -224,6 +267,7 @@ h1, h2, h3 { margin: 0; }
   <div class="budget">
     <div class="row"><span>Wage bill</span><span id="wageText"></span></div>
     <div class="bar"><i id="wageBar"></i></div>
+    <div class="bonus" id="bonusText"></div>
   </div>
   <div class="posts" id="posts"></div>
   <div class="footer">
@@ -278,6 +322,31 @@ h1, h2, h3 { margin: 0; }
       start: { a: 51, u: 55, e: 50, s: 44, m: 8 }, boost: { a: 1.3, e: 1.15 },
       blurb: "Insurgents promising to shake up Westminster.", perk: "Approval gains are 30% bigger, but MPs hate compromise" },
   };
+  // Your own party: where it sits from left (−100) to right (+100) sets what its MPs love and hate, and where it starts.
+  const OWN_COLOURS = ["#7b2cbf", "#e63946", "#2a9d8f", "#f4a261", "#3a86ff", "#ff6fb5", "#6a994e", "#8d6e63"];
+  const FOCUS = {
+    s: { label: "Public services", perk: "Public services gains are 20% bigger", boost: { s: 1.2 } },
+    e: { label: "The economy", perk: "Economy gains are 20% bigger", boost: { e: 1.2 } },
+    a: { label: "Popularity", perk: "Approval gains are 20% bigger", boost: { a: 1.2 } },
+    u: { label: "Party unity", perk: "Unity rises a little every quarter", unityDrift: 1 },
+  };
+  const LEAN_WORDS = { L: "tax and spend, unions and public ownership", R: "tax cuts, business and tough policing", C: "compromise, Europe and civil liberties",
+    P: "crowd-pleasers and shaking up the system", G: "the environment" };
+  function spectrumText(pos) {
+    const a = Math.abs(pos), side = pos < 0 ? "left" : "right";
+    return a < 15 ? "Centre" : a < 45 ? "Centre-" + side : a < 80 ? side.charAt(0).toUpperCase() + side.slice(1) : "Far " + side;
+  }
+  function inkFor(hex) {
+    const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.35 ? "#111" : "#fff";
+  }
+  function ownParty(cfg) {
+    const x = cfg.pos / 50, ax = Math.abs(x), f = FOCUS[cfg.focus] || FOCUS.s, r1 = (v) => Math.round(v * 10) / 10;
+    return { own: true, cfg, name: cfg.name, color: cfg.color, ink: inkFor(cfg.color), budget: 1050, diff: ax > 1.5 ? "Harder" : "Normal",
+      lean: { L: r1(-x), R: r1(x), C: r1(2 - 1.5 * ax), P: r1(ax - 1), G: r1(0.5 - 0.5 * x) },
+      start: { a: Math.round(48 - ax * 2), u: Math.round(58 + ax * 3), e: Math.round(50 + x * 2), s: Math.round(43 - x * 2), m: 8 },
+      boost: f.boost || {}, unityDrift: f.unityDrift || 0, perk: f.perk, blurb: spectrumText(cfg.pos) + ". Your own party." };
+  }
   const POSTS = [
     { id: "chan", title: "Chancellor", icon: "💷", desc: "Taxes, spending and the economy" },
     { id: "home", title: "Home Secretary", icon: "👮", desc: "Crime, police, prisons and borders" },
@@ -531,19 +600,30 @@ h1, h2, h3 { margin: 0; }
     c.trait = top <= 2 ? pick(TRAITS.low) : c.skill === top ? pick(TRAITS.skill) : c.loyalty === top ? pick(TRAITS.loyalty) : pick(TRAITS.media);
     return c;
   }
+  // Someone new joins the shortlist when a job opens up. There's always at least one cheap backbencher to pick.
+  function refill(post) {
+    const pool = run.pool[post];
+    pool.push(makeCandidate(post, Math.floor(rnd(0, 3))));
+    if (Math.min(...pool.map((c) => c.cost)) > 145) pool.push(makeCandidate(post, 0));
+    pool.sort((a, b) => a.cost - b.cost);
+  }
   function freshPool(post) { return [makeCandidate(post, 0), makeCandidate(post, 1), makeCandidate(post, 1), makeCandidate(post, 2)].sort((a, b) => a.cost - b.cost); }
   const initials = (n) => n.split(" ").map((w) => w[0]).join("");
   function avatar(c) { const a = el("div", "av", initials(c.name)); a.style.background = c.color; a.setAttribute("aria-hidden", "true"); return a; }
   const wageBill = () => POSTS.reduce((t, p) => t + (run.cabinet[p.id] ? run.cabinet[p.id].cost : 0), 0);
+  // A strong economy pays for a bigger Cabinet. The bonus is kept once earned, so a bad quarter never leaves you unable to pay your ministers.
+  const economyBonus = (e) => Math.max(0, Math.round((e - 50) * 1.2) * 10);
+  const party = () => (run.own || PARTIES[run.party]);
+  const cabBudget = () => party().budget + (run.cabBonus || 0);
   const fmtK = (k) => k >= 1000 ? "£" + (k / 1000).toFixed(2).replace(/0$/, "") + "m" : "£" + k + "k";
   const fmtBn = (m) => (m < 0 ? "−£" : "£") + Math.abs(Math.round(m)) + "bn";
   const skillOf = (post) => (post && run.cabinet[post] ? run.cabinet[post].skill : post ? 0 : 3);
 
   // ---------- screens
-  const SCREENS = ["title", "partyScreen", "cabScreen", "gameScreen"];
+  const SCREENS = ["title", "partyScreen", "ownScreen", "cabScreen", "gameScreen"];
   function show(id) { SCREENS.forEach((s) => { $(s).hidden = s !== id; }); window.scrollTo(0, 0); }
   function setPartyColours() {
-    const p = run && PARTIES[run.party]; if (!p) return;
+    const p = run && party(); if (!p) return;
     document.documentElement.style.setProperty("--party", p.color);
     document.documentElement.style.setProperty("--partyInk", p.ink);
   }
@@ -566,12 +646,68 @@ h1, h2, h3 { margin: 0; }
       b.onclick = () => newRun(id);
       box.appendChild(b);
     });
+    const own = el("button", "pcard own"); own.type = "button"; own.style.setProperty("--c", "#d9b45a");
+    const h = el("h3"); h.append(el("span", "dot"), "✨ Create your own party"); own.appendChild(h);
+    own.appendChild(el("p", null, "Name it, pick its colour and choose exactly where it stands, from far left to far right."));
+    own.onclick = renderOwn;
+    box.appendChild(own);
     show("partyScreen");
   }
 
-  function newRun(partyId) {
-    const p = PARTIES[partyId];
-    run = { party: partyId, q: 0, phase: "hire", stats: Object.assign({}, p.start), cabinet: {}, pool: {}, used: [], queue: [], ei: 0, last: null, hired: false };
+  // ---------- create your own party
+  let draft = null;
+  function renderOwn() {
+    draft = Object.assign({ name: "", color: OWN_COLOURS[0], pos: 0, focus: "s" }, save.own || {});
+    $("ownName").value = draft.name;
+    $("ownPos").value = draft.pos;
+    const sw = $("ownColours"); sw.replaceChildren();
+    OWN_COLOURS.forEach((c) => {
+      const b = el("button", "swatch"); b.type = "button"; b.style.background = c; b.dataset.c = c; b.setAttribute("aria-label", "Colour " + c);
+      b.onclick = () => { draft.color = c; updateOwn(); };
+      sw.appendChild(b);
+    });
+    const fc = $("ownFocus"); fc.replaceChildren();
+    Object.entries(FOCUS).forEach(([k, f]) => {
+      const b = el("button", "chip"); b.type = "button"; b.dataset.k = k;
+      b.append(el("b", null, f.label), el("small", null, f.perk));
+      b.onclick = () => { draft.focus = k; updateOwn(); };
+      fc.appendChild(b);
+    });
+    updateOwn();
+    show("ownScreen");
+  }
+  function updateOwn() {
+    draft.name = $("ownName").value.replace(/\s+/g, " ").trimStart().slice(0, 24);
+    draft.pos = Number($("ownPos").value);
+    const p = ownParty(Object.assign({}, draft, { name: draft.name.trim() || "Your party" }));
+    document.documentElement.style.setProperty("--party", p.color);
+    document.documentElement.style.setProperty("--partyInk", p.ink);
+    $("ownColours").querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.c === draft.color)));
+    $("ownFocus").querySelectorAll(".chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.k === draft.focus)));
+    $("ownPosText").textContent = spectrumText(draft.pos);
+    $("ownPos").setAttribute("aria-valuetext", spectrumText(draft.pos));
+    const tags = Object.keys(LEAN_WORDS);
+    const loves = tags.filter((t) => p.lean[t] >= 1).map((t) => LEAN_WORDS[t]);
+    const hates = tags.filter((t) => p.lean[t] <= -1).map((t) => LEAN_WORDS[t]);
+    const L = $("ownLeans"); L.replaceChildren();
+    L.append(el("b", null, "Your MPs love: "), loves.join("; ") || "nothing in particular", el("br"), el("b", null, "They hate: "), hates.join("; ") || "not much. You can please almost everyone");
+    $("ownPreview").textContent = "Start: approval " + p.start.a + " · unity " + p.start.u + " · economy " + p.start.e + " · services " + p.start.s
+      + " · Cabinet budget " + fmtK(p.budget) + (p.diff === "Harder" ? " · Harder: the extremes are hard to govern from" : "");
+  }
+  $("ownName").addEventListener("input", updateOwn);
+  $("ownPos").addEventListener("input", updateOwn);
+  $("ownBack").onclick = renderParties;
+  $("ownGo").onclick = () => {
+    updateOwn();
+    if (!draft.name.trim()) { $("ownName").focus(); $("ownName").placeholder = "Give your party a name first"; return; }
+    draft.name = draft.name.trim();
+    save.own = Object.assign({}, draft); persist();
+    newRun("own", ownParty(draft));
+  };
+
+  function newRun(partyId, own) {
+    const p = own || PARTIES[partyId];
+    run = { party: partyId, own: own || null, q: 0, phase: "hire", stats: Object.assign({}, p.start), cabinet: {}, pool: {}, used: [], queue: [], ei: 0, last: null, hired: false };
     POSTS.forEach((post) => { run.cabinet[post.id] = null; run.pool[post.id] = freshPool(post.id); });
     save.run = run; persist(); setPartyColours();
     renderCabinet();
@@ -579,13 +715,14 @@ h1, h2, h3 { margin: 0; }
 
   // ---------- cabinet (forming it at the start and reshuffles later)
   function renderCabinet(focusPost) {
-    const p = PARTIES[run.party], forming = !run.hired;
+    const p = party(), forming = !run.hired;
     $("cabTitle").textContent = forming ? "Form your Cabinet" : "Your Cabinet";
     $("cabLead").textContent = forming
       ? "Tap each job to hire a minister. Skilled ministers handle crises better, loyal ones keep the party together, and good media performers win over voters. Stars cost more."
       : "Tap a job to reshuffle. Sacking a minister costs a little party unity. An empty job means no advice and worse results in that department.";
-    const bill = wageBill(), pct = bill / p.budget;
-    $("wageText").textContent = fmtK(bill) + " of " + fmtK(p.budget);
+    const bill = wageBill(), budget = cabBudget(), pct = bill / budget;
+    $("wageText").textContent = fmtK(bill) + " of " + fmtK(budget);
+    $("bonusText").textContent = run.cabBonus ? "Includes a " + fmtK(run.cabBonus) + " bonus from your strong economy" : "Grow the economy above 50 to raise your Cabinet budget";
     const bar = $("wageBar"); bar.style.width = Math.min(100, pct * 100) + "%"; bar.className = pct > 1 ? "over" : pct > 0.85 ? "warn" : "";
     const box = $("posts"); box.replaceChildren();
     POSTS.forEach((post) => {
@@ -625,7 +762,7 @@ h1, h2, h3 { margin: 0; }
   };
 
   function openHire(postId) {
-    const post = POST[postId], p = PARTIES[run.party], cur = run.cabinet[postId];
+    const post = POST[postId], p = party(), cur = run.cabinet[postId];
     const sh = $("sheet"); sh.replaceChildren();
     const top = el("div", "top"); top.style.marginBottom = "0";
     const h = el("h3", null, post.icon + " " + post.title); h.style.flex = "1"; top.appendChild(h);
@@ -633,14 +770,14 @@ h1, h2, h3 { margin: 0; }
     sh.appendChild(top);
     // Keep back enough for the cheapest candidate in every other empty job, so the Cabinet can always be filled.
     const reserve = POSTS.reduce((t, x) => t + (x.id !== postId && !run.cabinet[x.id] ? Math.min(...run.pool[x.id].map((c) => c.cost)) : 0), 0);
-    const left = p.budget - wageBill() + (cur ? cur.cost : 0) - reserve;
+    const left = cabBudget() - wageBill() + (cur ? cur.cost : 0) - reserve;
     sh.appendChild(el("p", "sub", post.desc + ". You can spend up to " + fmtK(left) + " on this job" + (reserve ? ", keeping enough back to fill your other empty jobs." : ".")));
     if (cur) {
       sh.appendChild(candCard(cur, true, left));
       if (run.hired) {
         const sack = el("button", "btn ghost wide small", "Sack " + cur.name.split(" ")[0] + " (−3 unity)"); sack.type = "button";
         sack.style.margin = "0 0 14px";
-        sack.onclick = () => { run.cabinet[postId] = null; run.stats.u = clamp(run.stats.u - 3, 0, 100); run.pool[postId].push(makeCandidate(postId, Math.floor(rnd(0, 3)))); persist(); closeSheet(); renderCabinet(); checkCollapse(); };
+        sack.onclick = () => { run.cabinet[postId] = null; run.stats.u = clamp(run.stats.u - 3, 0, 100); refill(postId); persist(); closeSheet(); renderCabinet(); checkCollapse(); };
         sh.appendChild(sack);
       }
       sh.appendChild(el("div", "label", "Other candidates"));
@@ -683,7 +820,7 @@ h1, h2, h3 { margin: 0; }
     if (old && run.hired) run.stats.u = clamp(run.stats.u - 3, 0, 100);   // sacked to make room
     run.pool[c.post] = run.pool[c.post].filter((x) => x.id !== c.id);
     if (old && !run.hired) run.pool[c.post].push(old);                     // still forming: swap back into the pool
-    else run.pool[c.post].push(makeCandidate(c.post, Math.floor(rnd(0, 3))));
+    else refill(c.post);
     run.pool[c.post].sort((a, b) => a.cost - b.cost);
     run.cabinet[c.post] = c; persist(); buzz(15);
     closeSheet(); renderCabinet();
@@ -732,7 +869,7 @@ h1, h2, h3 { margin: 0; }
 
   // Works out what an option would actually do, with the department's minister and your party taken into account.
   function effect(opt, ev) {
-    const p = PARTIES[run.party], k = skillOf(ev.post);
+    const p = party(), k = skillOf(ev.post);
     const good = 0.6 + 0.15 * k, bad = 1.4 - 0.12 * k;
     const d = {};
     ["a", "u", "e", "s", "m"].forEach((key) => {
@@ -770,7 +907,7 @@ h1, h2, h3 { margin: 0; }
   const seatsFor = (share) => Math.round(650 / (1 + Math.exp(-(share - 0.33) * 12)));
 
   function renderHud(flash) {
-    const p = PARTIES[run.party];
+    const p = party();
     $("partyBadge").textContent = p.name;
     $("whenText").textContent = quarterLabel(run.q);
     const left = QUARTERS - run.q;
@@ -865,7 +1002,7 @@ h1, h2, h3 { margin: 0; }
       const post = POSTS.find((p) => run.cabinet[p.id] && run.cabinet[p.id].id === ev.subject);
       if (post) {
         const m = run.cabinet[post.id];
-        if (opt.sack) { run.cabinet[post.id] = null; run.pool[post.id].push(makeCandidate(post.id, Math.floor(rnd(0, 3)))); note = post.id; }
+        if (opt.sack) { run.cabinet[post.id] = null; refill(post.id); note = post.id; }
         if (opt.loyal) m.loyalty = clamp(m.loyalty + opt.loyal, 1, 5);
       }
     }
@@ -914,7 +1051,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   function endQuarter() {
-    const s = run.stats, p = PARTIES[run.party];
+    const s = run.stats, p = party();
     const cab = POSTS.map((x) => run.cabinet[x.id]).filter(Boolean);
     const avg = (k) => (cab.length ? cab.reduce((t, m) => t + m[k], 0) / cab.length : 1);
     const vacant = POSTS.length - cab.length;
@@ -931,6 +1068,9 @@ h1, h2, h3 { margin: 0; }
     const drift = {};
     ["a", "u", "e", "s", "m"].forEach((k) => { if (s[k] !== before[k]) drift[k] = s[k] - before[k]; });
     run.drift = drift;
+    const bonus = economyBonus(s.e);
+    run.bonusUp = bonus > (run.cabBonus || 0);
+    if (run.bonusUp) run.cabBonus = bonus;
     run.phase = "quarter"; persist();
     renderGame(drift);
     checkCollapse();
@@ -952,6 +1092,10 @@ h1, h2, h3 { margin: 0; }
     const share = voteShare(), seats = seatsFor(share);
     const pol = el("p", null, "If there were an election tomorrow, you'd get about " + Math.round(share * 100) + "% of the vote and " + seats + " seats. You need 326 for a majority.");
     pol.style.marginTop = "12px"; paper.appendChild(pol);
+    if (run.bonusUp) {
+      const up = el("p", null, "📈 Strong economy! Your Cabinet budget has grown to " + fmtK(cabBudget()) + ", so you can afford better ministers. Tap 👥 to reshuffle.");
+      up.style.fontWeight = "800"; up.style.color = "#0d6b38"; paper.appendChild(up);
+    }
     const last = run.q + 1 >= QUARTERS;
     const b = el("button", "btn wide", last ? "Call the general election" : "Next quarter"); b.type = "button";
     b.onclick = () => {
@@ -1009,7 +1153,7 @@ h1, h2, h3 { margin: 0; }
   }
 
   function endCard() {
-    const E = run.end, p = PARTIES[run.party];
+    const E = run.end, p = party();
     const paper = el("article", "paper");
     const kick = el("div", "kick"); kick.appendChild(el("span", null, E.ousted ? "Breaking news" : "Election night")); kick.appendChild(el("span", null, quarterLabel(Math.min(run.q, QUARTERS - 1))));
     paper.appendChild(kick);
@@ -1020,7 +1164,7 @@ h1, h2, h3 { margin: 0; }
       const big = el("div", "bigseats", "0"); paper.appendChild(big);
       paper.appendChild(el("p", null, p.name + " seats · " + Math.round(E.share * 100) + "% of the vote"));
       // Share the remaining seats out among the other parties.
-      const others = Object.entries(PARTIES).filter(([id]) => id !== run.party);
+      const others = Object.entries(PARTIES).filter(([id]) => id !== run.party);   // your own party runs against all four
       const weights = { lab: 0.36, con: 0.3, ld: 0.14, ref: 0.14 };
       let restSeats = 650 - E.seats, wsum = others.reduce((t, [id]) => t + weights[id], 0) + 0.12;
       const rows = [[p.name, p.color, E.seats]];
@@ -1045,7 +1189,7 @@ h1, h2, h3 { margin: 0; }
     const n = el("div", "bigseats", E.score.toLocaleString("en-GB")); n.style.fontSize = "2.6rem"; sc.appendChild(n);
     sc.appendChild(el("p", null, "Best: " + save.best.toLocaleString("en-GB") + " pts"));
     paper.appendChild(sc);
-    const again = el("button", "btn wide", "Play again as " + p.name); again.type = "button"; again.onclick = () => newRun(run.party);
+    const again = el("button", "btn wide", "Play again as " + p.name); again.type = "button"; again.onclick = () => newRun(run.party, run.own);
     const other = el("button", "btn wide", "Choose another party"); other.type = "button"; other.style.marginTop = "10px";
     other.style.background = "transparent"; other.style.color = "var(--paperInk)"; other.style.boxShadow = "inset 0 0 0 2px var(--paperInk)";
     other.onclick = renderParties;
@@ -1057,7 +1201,7 @@ h1, h2, h3 { margin: 0; }
   function openMenu() {
     const sh = $("sheet"); sh.replaceChildren();
     sh.appendChild(el("h3", null, "Menu"));
-    sh.appendChild(el("p", "sub", PARTIES[run.party].name + " government · " + quarterLabel(run.q)));
+    sh.appendChild(el("p", "sub", party().name + " government · " + quarterLabel(run.q)));
     const help = el("button", "btn wide", "How to play"); help.type = "button"; help.onclick = openHelp;
     const quit = el("button", "btn ghost wide", "Resign and start again"); quit.type = "button"; quit.style.marginTop = "10px";
     quit.onclick = () => { if (confirm("Resign as Prime Minister? This government will be lost.")) { closeSheet(); save.run = run = null; persist(); renderParties(); } };
@@ -1071,8 +1215,9 @@ h1, h2, h3 { margin: 0; }
     const sh = $("sheet"); sh.replaceChildren(); sh.classList.add("help");
     sh.appendChild(el("h3", null, "How to play"));
     const add = (h, items) => { sh.appendChild(el("h4", null, h)); const ul = el("ul"); items.forEach((t) => ul.appendChild(el("li", null, t))); sh.appendChild(ul); };
-    add("1. Pick a party", ["Labour, Conservative, Lib Dem or Reform UK. Each has a perk, its own starting position and its own Cabinet budget."]);
-    add("2. Hire your Cabinet", ["Six jobs to fill within your wage budget.", "Skill: better results and better advice in their department.",
+    add("1. Pick a party", ["Labour, Conservative, Lib Dem or Reform UK. Each has a perk, its own starting position and its own Cabinet budget.",
+      "Or create your own: name it, pick a colour, choose where it stands from left to right, and pick its big focus."]);
+    add("2. Hire your Cabinet", ["Six jobs to fill within your wage budget. A strong economy (above 50) raises the budget, and it stays raised.", "Skill: better results and better advice in their department.",
       "Loyalty: keeps your party united and avoids resignations.", "Media: lifts your approval every quarter."]);
     add("3. Govern for five years", ["Each quarter brings two decisions. The icons on each choice show what it affects.",
       "Your minister gives advice. Skilled ministers are usually right; weak ones often aren't.",
