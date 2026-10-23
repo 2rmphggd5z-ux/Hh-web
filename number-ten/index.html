@@ -162,7 +162,7 @@ h1, h2, h3 { margin: 0; }
 .meters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; }
 .meter { background: var(--bg2); border-radius: 12px; padding: 6px 4px 7px; text-align: center; position: relative; }
 .meter .ic { font-size: 1.05rem; line-height: 1.2; }
-.meter .v { font-weight: 900; font-size: .95rem; font-variant-numeric: tabular-nums; }
+.meter .v { font-weight: 900; font-size: clamp(.72rem, 3.4vw, .95rem); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
 .meter .n { font-size: .6rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .meter .mb { height: 4px; border-radius: 9px; background: rgba(255, 255, 255, .12); margin: 3px 6px 0; overflow: hidden; }
 .meter .mb i { display: block; height: 100%; background: var(--good); }
@@ -212,6 +212,20 @@ h1, h2, h3 { margin: 0; }
 .newbest { display: inline-block; background: var(--gold); color: #1b1404; font-weight: 900; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
   padding: 4px 12px; border-radius: 999px; margin-left: 6px; }
 .help h4 { margin: 14px 0 4px; }
+.opp { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; font-size: .9rem; color: #3a342c; }
+.opp b { display: block; color: var(--paperInk); }
+.tug { position: relative; height: 18px; border-radius: 99px; overflow: hidden; display: flex; margin: 6px 0 4px; border: 2px solid var(--paperInk); }
+.tug i { display: block; height: 100%; transition: width .5s ease; }
+.tug::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--paperInk); }
+.tuglab { display: flex; justify-content: space-between; font-size: .75rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #6b6255; margin-bottom: 12px; }
+.quote { font-family: var(--serif); font-size: 1.1rem; line-height: 1.4; border-left: 4px solid var(--oppc, #8a1c1c); padding: 4px 0 4px 12px; margin: 0 0 12px; color: var(--paperInk); }
+.quote small { display: block; font-family: var(--font); font-size: .78rem; font-weight: 800; color: #6b6255; margin-bottom: 4px; }
+.dlog { margin: 0 0 12px; display: grid; gap: 6px; }
+.dlog div { font-size: .85rem; line-height: 1.35; color: #3a342c; background: #efe7d4; border-radius: 10px; padding: 7px 10px; }
+.dlog .w { background: #d4f3e1; } .dlog .l { background: #fde0e0; }
+.tip { font-size: .82rem; color: #6b6255; margin: 10px 0 0; line-height: 1.4; }
+.votes { display: flex; height: 22px; border-radius: 6px; overflow: hidden; margin: 2px 0 6px; }
+.votes i { display: grid; place-items: center; color: #fff; font-size: .75rem; font-weight: 900; font-style: normal; }
 .help p, .help li { color: var(--muted); line-height: 1.45; font-size: .94rem; margin: 0; }
 .help ul { margin: 4px 0 0; padding-left: 18px; }
 @media (prefers-reduced-motion: reduce) { .sheet, .meter.flash { animation: none; } .seatbar i, .bar i { transition: none; } }
@@ -304,6 +318,7 @@ h1, h2, h3 { margin: 0; }
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const KEY = "number-ten";
   const QUARTERS = 20;   // five years, then a general election
+  const MAX_TERMS = 5;   // win five elections and you retire as a legend
   const SEASONS = ["Spring", "Summer", "Autumn", "Winter"];
 
   // ---------- data
@@ -573,12 +588,199 @@ h1, h2, h3 { margin: 0; }
     { id: "insurgent", only: ["ref"], title: "MPs demand a referendum", text: "Your MPs want a referendum on leaving the European Convention on Human Rights.",
       opts: [{ t: "Call the referendum", fx: { u: 7, a: -2, e: -1 }, tag: "P", r: "The party is fired up." },
         { t: "Focus on the economy instead", fx: { u: -6, e: 1 }, tag: "C", r: "Some MPs threaten to quit." }] },
+    { id: "minwage", post: "chan", title: "Minimum wage row", text: "Low-paid workers say they can't keep up with prices. Small businesses say they can't afford a big rise.",
+      opts: [{ t: "£15 an hour, starting now", fx: { a: 5, e: -3 }, tag: "L", r: "Pay packets jump. Some cafés put prices up." },
+        { t: "A steady rise over three years", fx: { a: 2 }, tag: "C", r: "A sensible path, says the Low Pay Commission." },
+        { t: "Lower rates for cheaper regions", fx: { e: 1, a: -2 }, tag: "R", r: "The North asks why it's worth less." },
+        { t: "Freeze it to protect jobs", fx: { e: 2, a: -5 }, tag: "R", r: "Unions call it a pay cut for the poorest." }] },
+    { id: "fourday", post: "chan", title: "Four-day week", text: "A big trial says workers were just as productive on a four-day week.",
+      opts: [{ t: "Trial it across the public sector", fx: { a: 3, s: -1, m: -1 }, tag: "L", r: "Staff are thrilled. Some services get stretched." },
+        { t: "Tax breaks for firms that try it", fx: { m: -2, e: 1, a: 1 }, tag: "C", r: "Hundreds of companies sign up." },
+        { t: "Not in this economy", fx: { e: 1, a: -1 }, tag: "R", r: "Business groups nod approvingly." }] },
+    { id: "rail", post: "chan", title: "High-speed rail overruns", text: "The new high-speed line is years late and tens of billions over budget.",
+      opts: [{ t: "Finish the whole line", fx: { m: -9, e: 4 }, r: "The North gets its fast trains, eventually." },
+        { t: "Cut the northern leg", fx: { m: 3, a: -4 }, r: "Northern mayors are livid." },
+        { t: "Scrap it. Spend it on local buses and trains", fx: { m: 2, s: 3, a: 1 }, tag: "P", r: "Commuters notice the difference within a year." }] },
+    { id: "inherit", post: "chan", title: "Inheritance tax row", text: "Families say inheritance tax is unfair. Campaigners say the richest dodge it anyway.",
+      opts: [{ t: "Abolish it", fx: { m: -5, a: 2 }, tag: "R", r: "Popular with homeowners, costly for the Treasury." },
+        { t: "Raise it on the biggest estates", fx: { m: 4, a: -1 }, tag: "L", r: "Accountants get busy." },
+        { t: "Close the loopholes only", fx: { m: 2 }, tag: "C", r: "Quietly effective." }] },
+    { id: "councils", post: "chan", title: "Councils going bust", text: "Three big councils say they can't balance their books. Bins and libraries are at risk.",
+      opts: [{ t: "Emergency bail-out", fx: { m: -4, s: 3 }, r: "The bins keep getting emptied." },
+        { t: "Let them put council tax up", fx: { a: -3, s: 1 }, tag: "R", r: "Bills land on doormats with a thud." },
+        { t: "Hand councils new tax powers", fx: { m: -1, s: 1, a: -1 }, tag: "C", r: "Some councils use them, some don't." }] },
+    { id: "gambling", post: "chan", title: "Online gambling boom", text: "Betting apps are making record profits and problem gambling is rising.",
+      opts: [{ t: "Tax betting firms harder", fx: { m: 4, a: 1 }, tag: "L", r: "The bookies grumble. The Treasury smiles." },
+        { t: "Ban gambling adverts", fx: { a: 3, e: -1, s: 1 }, tag: "C", r: "Football shirts look very different next season." },
+        { t: "Leave it to the industry", fx: { e: 1, a: -2 }, tag: "R", r: "Campaigners are furious." }] },
+    { id: "shoplift", post: "home", title: "Shoplifting epidemic", text: "Shop workers say theft is out of control and police don't turn up.",
+      opts: [{ t: "Police must attend every theft", fx: { m: -2, a: 3, s: 1 }, tag: "R", r: "Officers are stretched, but shops feel safer." },
+        { t: "Tackle the poverty behind it", fx: { m: -2, s: 1 }, tag: "L", r: "Food banks get funding. Results are slow." },
+        { t: "Make big chains pay for security", fx: { a: -1, e: -1 }, r: "Security guards appear in every supermarket." }] },
+    { id: "digitalid", post: "home", title: "Digital ID cards", text: "Officials say a digital ID would stop illegal working and make services easier to use.",
+      opts: [{ t: "Make digital ID compulsory", fx: { m: -3, a: -3, s: 2 }, tag: "R", r: "Civil liberties groups march on Parliament." },
+        { t: "Make it voluntary", fx: { m: -1, s: 1 }, tag: "C", r: "Millions sign up for convenience." },
+        { t: "Scrap the idea", fx: { a: 1 }, tag: "P", r: "Libertarians cheer." }] },
+    { id: "facial", post: "home", title: "Live facial recognition", text: "Police want to scan crowds with cameras that recognise wanted faces.",
+      opts: [{ t: "Roll it out nationally", fx: { a: 1, s: 2 }, tag: "R", r: "Arrests rise. So do complaints." },
+        { t: "Only with a judge's warrant", fx: { s: 1 }, tag: "C", r: "A careful compromise." },
+        { t: "Ban it", fx: { a: 1, s: -1 }, tag: "L", r: "Privacy campaigners celebrate." }] },
+    { id: "protest", post: "home", title: "Protesters block motorways", text: "Climate protesters glue themselves to the M25 for the third week running.",
+      opts: [{ t: "Tough new protest laws", fx: { a: 3 }, tag: "R", r: "Drivers cheer. Lawyers warn about free speech." },
+        { t: "Defend the right to protest", fx: { a: -2 }, tag: "C", r: "Commuters are fuming." },
+        { t: "Meet the protesters", fx: { a: -1, u: -1 }, tag: "G", r: "They call off the protests, for now." }] },
+    { id: "football", post: "home", title: "Football club collapses", text: "A famous old club goes bust after its owners loaded it with debt.",
+      opts: [{ t: "Create an independent football regulator", fx: { a: 3 }, tag: "P", r: "Fans across the country applaud." },
+        { t: "Fans' ownership scheme", fx: { m: -1, a: 3 }, tag: "L", r: "Supporters buy their club back." },
+        { t: "Leave it to the league", fx: { a: -2, e: 1 }, tag: "R", r: "Another club folds a year later." }] },
+    { id: "refugees", post: "foreign", title: "Refugees fleeing a war", text: "A brutal war abroad has created millions of refugees. Allies ask Britain to help.",
+      opts: [{ t: "Homes for refugees scheme", fx: { m: -3, a: 2 }, tag: "C", r: "Thousands of families open their homes." },
+        { t: "Take a small fixed number", fx: { a: 1, m: -1 }, r: "A cautious response." },
+        { t: "Send aid to the region instead", fx: { m: -2, a: 1 }, tag: "P", r: "Camps are built near the border." }] },
+    { id: "grid", post: "foreign", title: "Foreign buyer for the power grid", text: "A state-owned foreign company wants to buy part of Britain's electricity network.",
+      opts: [{ t: "Allow it. We need the investment", fx: { e: 4, a: -3 }, r: "Security chiefs are uneasy." },
+        { t: "Allow it with strict conditions", fx: { e: 2 }, tag: "C", r: "The deal goes ahead, carefully watched." },
+        { t: "Block it", fx: { e: -2, a: 2 }, tag: "P", r: "'Britain's not for sale', say the headlines." }] },
+    { id: "tradedeal", post: "foreign", title: "Big trade deal on the table", text: "A fast-growing economy offers a huge trade deal, but wants easier visas in return.",
+      opts: [{ t: "Sign it now", fx: { e: 4, a: -1 }, r: "Exporters are delighted." },
+        { t: "Hold out for a better deal", fx: { e: 1 }, r: "Talks drag on, but the terms improve." },
+        { t: "Walk away over visas", fx: { a: 1 }, tag: "P", r: "The deal goes to France instead." }] },
+    { id: "eurovision", post: "foreign", title: "Britain asked to host Eurovision", text: "The organisers want the UK to host next year's contest.",
+      opts: [{ t: "Yes! Host it in style", fx: { m: -1, a: 4, e: 1 }, r: "Glitter everywhere. Hotels are full." },
+        { t: "Too expensive, sorry", fx: { a: -2 }, r: "Fans are heartbroken." }] },
+    { id: "reparations", post: "foreign", title: "Calls for slavery reparations", text: "Commonwealth leaders ask Britain to apologise and pay reparations for slavery.",
+      opts: [{ t: "A formal apology", fx: { a: -1, u: -1 }, tag: "L", r: "Welcomed abroad, divisive at home." },
+        { t: "Fund education and health projects", fx: { m: -1, a: 1 }, tag: "C", r: "A practical gesture that's well received." },
+        { t: "Refuse", fx: { a: 1 }, tag: "R", r: "The summit ends frostily." }] },
+    { id: "vapes", post: "health", title: "Teen vaping craze", text: "Doctors warn that one in five teenagers now vapes.",
+      opts: [{ t: "Ban disposable vapes", fx: { a: 3, s: 1 }, r: "Parents are relieved." },
+        { t: "Tax them heavily", fx: { m: 2, s: 1 }, tag: "L", r: "Prices jump. Use dips." },
+        { t: "It's better than smoking. Leave it", fx: { a: -2 }, tag: "R", r: "Headteachers despair." }] },
+    { id: "mental", post: "health", title: "Youth mental health crisis", text: "Waiting lists for young people's mental health services are over two years long.",
+      opts: [{ t: "A counsellor in every school", fx: { m: -3, s: 4, a: 2 }, tag: "L", r: "Children get help where they are." },
+        { t: "Free online therapy app", fx: { m: -1, s: 1 }, tag: "C", r: "Cheap, but critics say it's not enough." },
+        { t: "Ban social media for under-16s", fx: { a: 2, s: 1 }, tag: "P", r: "Teenagers find ways around it within a week." }] },
+    { id: "nurses", post: "health", title: "Nurses moving abroad", text: "Thousands of nurses are leaving for better pay in Australia.",
+      opts: [{ t: "Give nurses a big pay rise", fx: { m: -4, s: 4, a: 2 }, tag: "L", r: "Some come home." },
+        { t: "Recruit nurses from overseas", fx: { s: 2, a: -2 }, r: "Wards are staffed, but critics object." },
+        { t: "Pay training fees for new nurses", fx: { m: -2, s: 2 }, tag: "C", r: "Applications rise." }] },
+    { id: "smoking", post: "health", title: "Smoking ban for the next generation", text: "Doctors want it to be illegal to sell cigarettes to anyone born after 2009.",
+      opts: [{ t: "Bring in the generational ban", fx: { s: 3, a: 1, u: -2 }, tag: "C", r: "World-leading, say health experts." },
+        { t: "Just raise tobacco tax", fx: { m: 3 }, tag: "L", r: "Smokers pay more." },
+        { t: "It's a free country", fx: { a: -1 }, tag: "P", r: "Nothing changes." }] },
+    { id: "aiexams", post: "edu", title: "AI cheating in exams", text: "Teachers say students are using AI to write their coursework.",
+      opts: [{ t: "Back to handwritten exams only", fx: { a: 1, s: -1 }, tag: "R", r: "Exam halls fill up again." },
+        { t: "Teach AI skills in every school", fx: { m: -2, s: 3, e: 1 }, tag: "C", r: "Britain's pupils get ahead." }] },
+    { id: "apprentice", post: "edu", title: "The skills gap", text: "Businesses say they can't find plumbers, electricians or engineers.",
+      opts: [{ t: "100,000 new apprenticeships", fx: { m: -4, e: 3, s: 1 }, r: "Young people learn a trade." },
+        { t: "Make big firms fund training", fx: { m: 2, e: -1 }, tag: "L", r: "Firms grumble but pay up." },
+        { t: "Fewer university places, more colleges", fx: { m: 2, a: -2, e: 1 }, tag: "P", r: "Universities protest." }] },
+    { id: "holidays", post: "edu", title: "Term-time holiday fines", text: "Parents say holiday prices double in school breaks. Heads say every day of school counts.",
+      opts: [{ t: "Raise the fines", fx: { a: -3, s: 1 }, tag: "R", r: "Parents are fuming." },
+        { t: "Scrap the fines", fx: { a: 3, s: -1 }, tag: "P", r: "Airports get busier in term time." },
+        { t: "Cap holiday prices in school breaks", fx: { a: 2, e: -1 }, tag: "L", r: "Travel firms threaten to sue." }] },
+    { id: "boilers", post: "energy", title: "Gas boilers or heat pumps?", text: "Climate advisers want new gas boilers banned. Families worry about the cost.",
+      opts: [{ t: "Ban new gas boilers from 2030", fx: { a: -3, e: 1 }, tag: "G", r: "Green groups cheer. Homeowners panic." },
+        { t: "Big grants for heat pumps", fx: { m: -3, a: 2 }, tag: "C", r: "Installers are booked up for months." },
+        { t: "Let families decide", fx: { a: 2 }, tag: "P", r: "Climate targets slip." }] },
+    { id: "chargers", post: "energy", title: "Electric car charging gaps", text: "Drivers say they can't switch to electric cars because there aren't enough chargers.",
+      opts: [{ t: "Build 100,000 public chargers", fx: { m: -3, e: 2 }, tag: "G", r: "Charging points pop up on every high street." },
+        { t: "Leave it to energy firms", fx: { e: 1 }, tag: "R", r: "Cities get chargers. Villages don't." }] },
+    { id: "solar", post: "energy", title: "Solar panels on new homes", text: "Should every new home be built with solar panels on the roof?",
+      opts: [{ t: "Make it law", fx: { e: 1, a: 1 }, tag: "G", r: "Bills fall for new homeowners." },
+        { t: "Let builders choose", fx: { e: 1 }, tag: "R", r: "Most don't bother." }] },
+    { id: "mpspay", title: "MPs' pay rise", text: "The independent body recommends a 9% pay rise for MPs.",
+      opts: [{ t: "Accept it", fx: { a: -4, u: 3 }, r: "Your MPs are pleased. Voters are not." },
+        { t: "Refuse it", fx: { a: 3, u: -2 }, r: "Popular outside Westminster." }] },
+    { id: "honours", title: "Honours list row", text: "Your predecessor's resignation honours list is full of donors and friends.",
+      opts: [{ t: "Block the list", fx: { a: 2, u: -3 }, r: "Your predecessor is furious." },
+        { t: "Wave it through", fx: { a: -3, u: 2 }, r: "'Cronyism!' say the papers." }] },
+    { id: "deepfake", title: "Deepfake video of you", text: "A fake AI video of you saying offensive things has gone viral.",
+      opts: [{ t: "Laugh it off", fx: { a: 2 }, r: "Your relaxed response wins praise." },
+        { t: "Pass a law against political deepfakes", fx: { a: 1 }, tag: "C", r: "Other countries copy it." },
+        { t: "Sue the platform", fx: { a: 1, e: -1 }, r: "The legal fight drags on for months." }] },
+    { id: "tvdebate", title: "TV leaders' debate challenge", text: "The other party leaders challenge you to a live TV debate.",
+      opts: [{ t: "Accept the challenge", fx: { a: 3, u: 1 }, r: "A strong performance. Clips go viral." },
+        { t: "Send a minister instead", fx: { a: -2 }, r: "'Chicken!' say the opposition." },
+        { t: "Refuse: you're busy governing", fx: { a: -1 }, r: "A few people notice." }] },
   ];
   const BUDGET = { id: "budget", post: "chan", kicker: "Budget Day", title: "It's Budget Day", text: "The Chancellor stands at the despatch box with the famous red box. What's in it?",
     opts: [{ t: "Tax and invest in public services", fx: { m: 3, s: 7, e: -2, a: -2 }, tag: "L", r: "More money for hospitals and schools, paid for by higher taxes." },
       { t: "Balance the books", fx: { m: 9, e: 1, s: -2, a: -2 }, tag: "C", r: "Dull but responsible, says the City." },
       { t: "Cut taxes to boost growth", fx: { m: -8, e: 6, s: -2, a: 4 }, tag: "R", r: "Business loves it. The deficit grows." },
       { t: "A giveaway for voters", fx: { m: -11, a: 8, e: 1 }, tag: "P", r: "Popular now, painful later." }] };
+  // Commons debates. kind "bill": your law, and MPs vote at the end. kind "motion": the opposition attacks you over a problem.
+  // Each argument is a statistic (num), a personal story (story) or a dig at you (jab).
+  const DEBATES = [
+    { id: "votes16", kind: "bill", title: "Votes at 16 Bill", text: "Your government wants to let 16 and 17-year-olds vote in every election.", tag: "C", pass: { a: 2, u: 1 },
+      args: [["num", "Only one in four 16-year-olds even says they want the vote. Why force it on them?"],
+        ["story", "A teacher in my constituency tells me her pupils just want to pass their exams, not become political footballs."],
+        ["jab", "The Prime Minister only wants younger voters because everyone older has seen through them!"]] },
+    { id: "national", kind: "bill", title: "National Service Bill", text: "Your plan: every 18-year-old does a year of military or community service.", tag: "P", pass: { a: 3, m: -3, s: 1 },
+      args: [["num", "This scheme will cost £2.5 billion a year. That's 50,000 nurses!"],
+        ["story", "A mum wrote to me: her son has a place at college and this will throw his life off course."],
+        ["jab", "The Prime Minister never did a day of service in their life. Talk about do as I say!"]] },
+    { id: "rent", kind: "bill", title: "Rent Controls Bill", text: "Your bill caps how much landlords can raise rents each year.", tag: "L", pass: { a: 4, e: -2 },
+      args: [["num", "Every country that tried rent controls saw the number of homes to rent fall by up to 15%."],
+        ["story", "I met a retired couple who rent out one flat for their pension. This bill ruins them."],
+        ["jab", "This is economics drawn on the back of a beer mat by a Prime Minister who's never balanced a budget."]] },
+    { id: "taxcut", kind: "bill", title: "Finance Bill: tax cuts", text: "Your Finance Bill cuts the basic rate of income tax by 2p.", tag: "R", pass: { a: 3, e: 3, m: -5 },
+      args: [["num", "This blows a £14 billion hole in the public finances. Where will the money come from?"],
+        ["story", "A nurse told me: a tax cut is no use when her ward has closed."],
+        ["jab", "The Prime Minister's friends in the City will be popping champagne tonight!"]] },
+    { id: "online", kind: "bill", title: "Online Safety Bill", text: "Your bill forces social media firms to protect children from harmful content.", tag: "C", pass: { a: 3, s: 1 },
+      args: [["num", "Tech firms say this will cost them £1 billion. They'll just pull services from Britain."],
+        ["story", "A small business owner tells me the paperwork alone will put her out of business."],
+        ["jab", "The Prime Minister can barely send an email, and now they want to run the internet?"]] },
+    { id: "railways", kind: "bill", title: "Railways Nationalisation Bill", text: "Your bill brings the railways back into public ownership.", tag: "L", pass: { m: -3, s: 3, a: 2 },
+      args: [["num", "Nationalised railways lost money every year for forty years. We've seen this film before!"],
+        ["story", "Train workers tell me they fear a return to the bad old days of British Rail sandwiches."],
+        ["jab", "The Prime Minister can't run a Cabinet, never mind a railway!"]] },
+    { id: "borders", kind: "bill", title: "Border Security Bill", text: "Your bill creates a new Border Force command with tough new powers.", tag: "R", pass: { a: 4, m: -2 },
+      args: [["num", "Since you took office, crossings are up 30%. Another law won't fix that."],
+        ["story", "A charity worker told me about a child refugee who would be locked up under this bill."],
+        ["jab", "The Prime Minister has announced more crackdowns than they've had hot dinners, and none of them worked."]] },
+    { id: "greenind", kind: "bill", title: "Green Industry Bill", text: "Your bill invests in wind farms, batteries and green steel.", tag: "G", pass: { e: 3, m: -4 },
+      args: [["num", "Green subsidies already add £150 a year to every energy bill."],
+        ["story", "A steelworker told me he's terrified his job will vanish under this plan."],
+        ["jab", "The Prime Minister flew to the climate summit on a private jet. Spare us the lecture!"]] },
+    { id: "lordsbill", kind: "bill", title: "House of Lords Reform Bill", text: "Your bill replaces the Lords with an elected second chamber.", tag: "C", pass: { a: 2 },
+      args: [["num", "Elections for a new chamber would cost £100 million. For what?"],
+        ["story", "A Lords expert on medicine has saved countless lives with her work. You'd throw that away."],
+        ["jab", "This from a Prime Minister who's handed out more peerages to donors than anyone!"]] },
+    { id: "nhsmotion", kind: "motion", title: "Opposition day: NHS waiting lists", text: "The opposition has called a debate attacking your record on the NHS." ,
+      args: [["num", "Seven million people are on waiting lists. That's one in nine of us!"],
+        ["story", "Last week a pensioner in my town waited fourteen hours on a trolley in A&E."],
+        ["jab", "The Prime Minister's idea of NHS reform is a photo opportunity in a hospital car park."]] },
+    { id: "colmotion", kind: "motion", title: "Opposition day: the cost of living", text: "The opposition says families can't afford to heat their homes.",
+      args: [["num", "Food prices are up 25% in two years. Wages are up 9%."],
+        ["story", "A mum in my constituency skips meals so her children can eat."],
+        ["jab", "The Prime Minister wouldn't know the price of a pint of milk!"]] },
+    { id: "crimemotion", kind: "motion", title: "Opposition day: crime on our streets", text: "The opposition says crime is out of control on your watch.",
+      args: [["num", "Nine out of ten burglaries now go unsolved."],
+        ["story", "A shopkeeper told me he's been robbed six times this year and police never came once."],
+        ["jab", "This Prime Minister is soft on crime and soft in the head!"]] },
+    { id: "sleaze", kind: "motion", title: "Opposition day: government sleaze", text: "The opposition accuses your government of handing contracts to friends.",
+      args: [["num", "£3 billion of contracts went to firms run by party donors."],
+        ["story", "A small firm tells me it lost a contract to a donor's company that had never done the work before."],
+        ["jab", "The Prime Minister's government has more scandals than a soap opera!"]] },
+    { id: "econmotion", kind: "motion", title: "Opposition day: the economy", text: "The opposition says you've crashed the economy.",
+      args: [["num", "Growth is the lowest of any G7 country."],
+        ["story", "A factory owner in my town has just laid off 200 people."],
+        ["jab", "The Prime Minister couldn't run a bath, never mind an economy!"]] },
+    { id: "housemotion", kind: "motion", title: "Opposition day: the housing crisis", text: "The opposition says a whole generation can't afford a home.",
+      args: [["num", "The average home now costs nine times the average salary."],
+        ["story", "A young teacher told me she's 34 and still sleeping in her childhood bedroom."],
+        ["jab", "The Prime Minister owns three houses and has never had to worry about rent!"]] },
+  ];
+  const STYLES = [
+    { k: "facts", icon: "📊", t: "Hit back with the facts", beats: "num" },
+    { k: "heart", icon: "❤️", t: "Tell a real person's story", beats: "story" },
+    { k: "humour", icon: "😄", t: "Laugh it off with a joke", beats: "jab" },
+    { k: "attack", icon: "🔥", t: "Attack their record (risky)" },
+  ];
+  const GOOD = ["The House roars. Your MPs wave their order papers!", "A perfect answer. The opposition benches fall silent.", "Spot on. Even some opposition MPs nod along."];
+  const BAD = ["It falls flat. The opposition benches jeer.", "Wrong answer for that point. You look rattled.", "The Speaker has to call for order as they laugh at you."];
   const SCANDALS = ["in expenses row", "caught on hot mic", "in leaked messages storm", "in second-jobs scandal", "in undeclared gifts row", "breaks the ministerial code"];
 
   // ---------- save
@@ -707,7 +909,7 @@ h1, h2, h3 { margin: 0; }
 
   function newRun(partyId, own) {
     const p = own || PARTIES[partyId];
-    run = { party: partyId, own: own || null, q: 0, phase: "hire", stats: Object.assign({}, p.start), cabinet: {}, pool: {}, used: [], queue: [], ei: 0, last: null, hired: false };
+    run = { party: partyId, own: own || null, q: 0, phase: "hire", stats: Object.assign({}, p.start), cabinet: {}, pool: {}, used: [], queue: [], ei: 0, last: null, hired: false, term: 1, career: 0, seats: 340, usedDebates: [] };
     POSTS.forEach((post) => { run.cabinet[post.id] = null; run.pool[post.id] = freshPool(post.id); });
     save.run = run; persist(); setPartyColours();
     renderCabinet();
@@ -863,6 +1065,7 @@ h1, h2, h3 { margin: 0; }
       const mev = q.length === 1 && Math.random() < 0.3 ? ministerEvent() : null;
       q.push(mev || drawEvent());
     }
+    if (run.q % 2 === 1) q.push(makeDebate());
     q.forEach((ev) => { ev.seed = Math.random(); ev.seed2 = Math.random(); });
     run.queue = q; run.ei = 0; run.phase = "event"; run.qStart = Object.assign({}, run.stats);
   }
@@ -898,7 +1101,8 @@ h1, h2, h3 { margin: 0; }
     return { m, idx };
   }
 
-  function quarterLabel(q) { return SEASONS[q % 4] + " " + (2027 + Math.floor(q / 4)); }
+  const term = () => (run && run.term) || 1;
+  function quarterLabel(q) { return SEASONS[q % 4] + " " + (2027 + (term() - 1) * 5 + Math.floor(q / 4)); }
   function voteShare(st) {
     const s = st || run.stats;
     let v = 0.12 + s.a * 0.0045 + (s.e - 50) * 0.0015 + (s.s - 50) * 0.0012 + (s.u - 50) * 0.0006 + (s.m < -20 ? -0.015 : 0);
@@ -909,7 +1113,7 @@ h1, h2, h3 { margin: 0; }
   function renderHud(flash) {
     const p = party();
     $("partyBadge").textContent = p.name;
-    $("whenText").textContent = quarterLabel(run.q);
+    $("whenText").textContent = (term() > 1 ? "Term " + term() + " · " : "") + quarterLabel(run.q);
     const left = QUARTERS - run.q;
     $("electionText").textContent = left <= 1 ? "General election this quarter!" : "Election in " + left + " quarters";
     const box = $("meters"); box.replaceChildren();
@@ -943,9 +1147,10 @@ h1, h2, h3 { margin: 0; }
     show("gameScreen");
     renderHud(flash);
     const stage = $("stage"); stage.replaceChildren();
-    if (run.phase === "event") stage.appendChild(eventCard(run.queue[run.ei]));
+    if (run.phase === "event") stage.appendChild(run.queue[run.ei].kind === "debate" ? debateCard(run.queue[run.ei]) : eventCard(run.queue[run.ei]));
     else if (run.phase === "result") stage.appendChild(resultCard());
     else if (run.phase === "quarter") stage.appendChild(quarterCard());
+    else if (run.phase === "won") stage.appendChild(wonCard());
     else if (run.phase === "over") stage.appendChild(endCard());
     const b = stage.querySelector("button"); if (b) b.focus({ preventScroll: true });
   }
@@ -1013,6 +1218,123 @@ h1, h2, h3 { margin: 0; }
     if (checkCollapse()) return;
   }
 
+
+  // ---------- Commons debates
+  function mainOpposition() {
+    if (run.party === "lab") return "con";
+    if (run.party === "own") return run.own.cfg.pos < 0 ? "con" : "lab";
+    return "lab";
+  }
+  function rivalName(id) {
+    run.rivals = run.rivals || {};
+    if (!run.rivals[id]) run.rivals[id] = pick(FIRST) + " " + pick(LAST);
+    return run.rivals[id];
+  }
+  // How good each rival leader is at debating (2 to 5). They claw back ground every round.
+  function rivalSkill(id) {
+    run.rivalSkill = run.rivalSkill || {};
+    if (!run.rivalSkill[id]) run.rivalSkill[id] = pick([2, 3, 3, 4, 4, 5]);
+    return run.rivalSkill[id];
+  }
+  function makeDebate() {
+    run.usedDebates = run.usedDebates || [];
+    let pool = DEBATES.filter((d) => !run.usedDebates.includes(d.id));
+    if (!pool.length) { run.usedDebates = []; pool = DEBATES; }
+    const d = JSON.parse(JSON.stringify(pick(pool))); run.usedDebates.push(d.id);
+    const others = Object.keys(PARTIES).filter((id) => id !== run.party);
+    const opp = Math.random() < 0.6 ? mainOpposition() : pick(others);
+    rivalName(opp); rivalSkill(opp);
+    return { kind: "debate", d, opp, round: 0, meter: 0, log: [], started: false };
+  }
+  const cabAvg = (k) => { const cab = POSTS.map((x) => run.cabinet[x.id]).filter(Boolean); return cab.length ? cab.reduce((t, m) => t + m[k], 0) / cab.length : 1; };
+
+  function debateCard(ev) {
+    const d = ev.d, op = PARTIES[ev.opp], me = party(), name = rivalName(ev.opp);
+    const paper = el("article", "paper");
+    const kick = el("div", "kick");
+    kick.appendChild(el("span", null, "🏛️ " + (d.kind === "bill" ? "House of Commons" : "Opposition day")));
+    kick.appendChild(el("span", null, "Decision " + (run.ei + 1) + " of " + run.queue.length));
+    paper.appendChild(kick);
+    paper.appendChild(el("h2", null, d.title));
+    paper.appendChild(el("p", null, d.text));
+    const box = el("div", "opp");
+    box.appendChild(avatar({ name, color: op.color }));
+    const who = el("div"); who.appendChild(el("b", null, name + " " + "★".repeat(rivalSkill(ev.opp)) + "☆".repeat(5 - rivalSkill(ev.opp)))); who.append(op.name + " leader" + (ev.opp === mainOpposition() ? " · Leader of the Opposition" : ""));
+    box.appendChild(who); paper.appendChild(box);
+    const opts = el("div", "opts");
+    const btn = (label, icon, fn) => { const b = el("button", "opt"); b.type = "button"; b.appendChild(el("span", null, label)); if (icon) b.appendChild(el("span", "fx", icon)); b.onclick = fn; opts.appendChild(b); };
+    if (!ev.started) {
+      const seats = run.seats || 340;
+      if (d.kind === "bill") paper.appendChild(el("p", null, "You have " + seats + " MPs. A bill needs more votes for it than against it. Win the debate to win over other MPs, and keep your party united so yours don't rebel."));
+      else paper.appendChild(el("p", null, "Win the debate and voters will see you on top of things. Lose it and the clips will be everywhere."));
+      btn(d.kind === "bill" ? "Take it to the Commons and debate it" : "Answer it yourself at the despatch box", "🎤", () => { ev.started = true; ev.meter = Math.round((cabAvg("media") - 3) * 8); persist(); renderGame(); });
+      btn(d.kind === "bill" ? "Quietly shelve the bill" : "Send a junior minister instead", "👍", () => finishDebate(ev, true));
+      paper.appendChild(opts);
+      return paper;
+    }
+    // Who's winning
+    const you = clamp(50 + ev.meter / 2, 2, 98);
+    const tug = el("div", "tug"); tug.setAttribute("aria-label", "Debate: " + (ev.meter > 0 ? "you're ahead" : ev.meter < 0 ? "they're ahead" : "level"));
+    const a = el("i"), b = el("i"); a.style.width = you + "%"; a.style.background = me.color; b.style.width = (100 - you) + "%"; b.style.background = op.color;
+    tug.append(a, b); paper.appendChild(tug);
+    const lab = el("div", "tuglab"); lab.append(el("span", null, "You"), el("span", null, "Round " + (ev.round + 1) + " of " + d.args.length), el("span", null, name.split(" ")[1])); paper.appendChild(lab);
+    if (ev.log.length) {
+      const lg = el("div", "dlog");
+      ev.log.forEach((x) => lg.appendChild(el("div", x.delta > 0 ? "w" : "l", STYLES.find((st) => st.k === x.k).icon + " " + x.react)));
+      paper.appendChild(lg);
+    }
+    const arg = d.args[ev.round];
+    const q = el("blockquote", "quote"); q.style.setProperty("--oppc", op.color);
+    q.appendChild(el("small", null, name + " says:")); q.append("“" + arg[1] + "”");
+    paper.appendChild(q);
+    STYLES.forEach((st) => btn(st.t, st.icon, () => respond(ev, st)));
+    paper.appendChild(opts);
+    if (ev.round === 0) paper.appendChild(el("p", "tip", "Tip: answer a statistic with facts, a sad story with a story of your own, and a personal dig with a joke. Attacking is a gamble: ministers who are good on TV make it pay off more often. The stars show how good your rival is at debating."));
+    return paper;
+  }
+
+  function respond(ev, st) {
+    const arg = ev.d.args[ev.round];
+    let delta, react;
+    if (st.k === "attack") {
+      const ok = Math.random() < 0.3 + cabAvg("media") * 0.07;
+      delta = ok ? 40 : -30; react = ok ? "A brutal comeback about their record. Your benches go wild!" : "It backfires. They hit back even harder.";
+    } else if (st.beats === arg[0]) { delta = 30; react = pick(GOOD); }
+    else { delta = -20; react = pick(BAD); }
+    ev.meter = clamp(ev.meter + delta - rivalSkill(ev.opp) * 4, -100, 100);   // a skilled rival claws some back every round
+    ev.log.push({ k: st.k, delta, react });
+    ev.round++;
+    buzz(delta > 0 ? 20 : [30, 40, 30]);
+    if (ev.round >= ev.d.args.length) return finishDebate(ev, false);
+    persist(); renderGame();
+  }
+
+  function finishDebate(ev, skipped) {
+    const d = ev.d, res = skipped ? "skip" : ev.meter >= 20 ? "win" : ev.meter <= -20 ? "lose" : "draw";
+    const verdict = { win: "You won the debate.", draw: "The debate ended level.", lose: "You lost the debate.", skip: "" }[res];
+    let opt, r, vote = null;
+    if (skipped) {
+      opt = { fx: { a: -2 } };
+      r = d.kind === "bill" ? "You shelved the " + d.title + ". Critics say you lost your nerve." : "Your junior minister gets a rough ride, but it's soon forgotten.";
+    } else if (d.kind === "bill") {
+      const seats = run.seats || 340, others = 650 - seats;
+      const ayes = Math.round(seats * clamp(0.75 + run.stats.u * 0.0022, 0.75, 0.97) + others * { win: 0.3, draw: 0.12, lose: 0.03 }[res]);
+      const noes = 642 - ayes;   // a few abstain, and the Speaker doesn't vote
+      vote = { ayes, noes };
+      if (ayes > noes) { opt = { fx: d.pass, tag: d.tag }; r = "The " + d.title + " passes! " + ayes + " votes to " + noes + "."; }
+      else { opt = { fx: { a: -3, u: -3 } }; r = "Defeated! The " + d.title + " falls by " + (noes - ayes) + " votes."; }
+    } else {
+      opt = { fx: { win: { a: 4, u: 2 }, draw: { a: 1 }, lose: { a: -4, u: -2 } }[res] };
+      r = { win: "You won the argument. The opposition's attack falls apart.", draw: "Honours even. Nobody remembers it by the weekend.", lose: "The opposition landed blow after blow. Clips of your answers are everywhere." }[res];
+    }
+    const dd = effect(opt, { post: d.post || null, raw: !opt.tag });
+    Object.keys(dd).forEach((k) => { run.stats[k] = k === "m" ? run.stats[k] + dd[k] : clamp(run.stats[k] + dd[k], 0, 100); });
+    run.last = { title: d.title, choice: skipped ? (d.kind === "bill" ? "You avoided a vote." : "You stayed away from the debate.") : verdict, r, d: dd, debate: true, vote };
+    run.phase = "result"; persist();
+    renderGame(dd);
+    checkCollapse();
+  }
+
   function deltaChips(d) {
     const box = el("div", "deltas");
     const keys = STATS.filter((s) => d[s.k]);
@@ -1031,7 +1353,13 @@ h1, h2, h3 { margin: 0; }
     const kick = el("div", "kick"); kick.appendChild(el("span", null, "The verdict")); kick.appendChild(el("span", null, quarterLabel(run.q)));
     paper.appendChild(kick);
     paper.appendChild(el("h2", null, L.r));
-    paper.appendChild(el("p", null, "You chose: " + L.choice + "."));
+    paper.appendChild(el("p", null, L.debate ? L.choice : "You chose: " + L.choice + "."));
+    if (L.vote) {
+      const tot = L.vote.ayes + L.vote.noes, bar = el("div", "votes");
+      const ay = el("i", null, "Ayes " + L.vote.ayes), no = el("i", null, "Noes " + L.vote.noes);
+      ay.style.width = (L.vote.ayes / tot * 100) + "%"; ay.style.background = "#1f7a4d"; no.style.width = (L.vote.noes / tot * 100) + "%"; no.style.background = "#9b1c1c";
+      bar.append(ay, no); paper.appendChild(bar);
+    }
     paper.appendChild(deltaChips(L.d));
     if (L.vacancy) {
       const b = el("button", "btn wide", "Hire a new " + POST[L.vacancy].title); b.type = "button"; b.style.marginBottom = "10px";
@@ -1062,7 +1390,7 @@ h1, h2, h3 { margin: 0; }
     s.s += -1 + ((skillOf("health") + skillOf("edu")) / 2 - 3) * 0.7;
     s.u += (avg("loyalty") - 3) * 1.6 + (p.unityDrift || 0) - vacant * 0.8;
     const target = 0.35 * s.e + 0.35 * s.s + 0.15 * s.u + 8 + (avg("media") - 3) * 4;
-    s.a += (target - s.a) * 0.18 - 0.7;   // governing wears you down
+    s.a += (target - s.a) * 0.18 - 0.7 - 0.35 * (term() - 1);   // governing wears you down, and voters tire of you each term
     ["a", "u", "e", "s"].forEach((k) => { s[k] = clamp(Math.round(s[k]), 0, 100); });
     s.m = Math.round(s.m);
     const drift = {};
@@ -1127,64 +1455,116 @@ h1, h2, h3 { margin: 0; }
   }
 
   function finish(o) {
-    const s = run.stats;
-    const served = o.ousted ? run.q : QUARTERS;
-    let score = served * 30 + clamp(Math.round(s.m), 0, 300) * 5;   // at most 10,100 in all (see supabase/add-number-ten.sql)
+    const termScore = (o.ousted ? run.q : QUARTERS) * 30 + (o.ousted ? 0 : o.seats * 10 + (o.seats >= 326 ? 1500 : o.seats >= 290 ? 500 : 0));
     let verdict, title, text;
     if (o.ousted) { verdict = "Out"; title = o.title; text = o.text; }
-    else {
-      score += o.seats * 10 + (o.seats >= 326 ? 1500 : o.seats >= 290 ? 500 : 0);
-      if (o.seats >= 400) { verdict = "Landslide"; title = "A landslide victory!"; text = "The country has backed you in huge numbers. Five more years in Downing Street."; }
-      else if (o.seats >= 326) { verdict = "Majority"; title = "You won a majority!"; text = "Voters have given you another term. Back through the black door you go."; }
-      else if (o.seats >= 290) { verdict = "Hung parliament"; title = "Hung parliament"; text = "You're the biggest party, but short of a majority. You cling on in a shaky coalition."; }
-      else { verdict = "Defeated"; title = "You lost the election"; text = "The voters have had enough. The removal vans are outside Number 10."; }
+    else if (o.seats >= 400) { verdict = "Landslide"; title = "A landslide victory!"; text = "The country has backed you in huge numbers."; }
+    else if (o.seats >= 326) { verdict = "Majority"; title = "You won a majority!"; text = "Voters have given you another term. Back through the black door you go."; }
+    else if (o.seats >= 290) { verdict = "Hung parliament"; title = "Hung parliament"; text = "You're the biggest party, but short of a majority. You can stay on by forming a coalition."; }
+    else { verdict = "Defeated"; title = "You lost the election"; text = "The voters have had enough. The removal vans are outside Number 10."; }
+    if (!o.ousted && o.seats >= 290) {
+      // Re-elected: carry on into another term, or retire on a high.
+      run.career = (run.career || 0) + termScore;
+      run.seats = o.seats >= 326 ? o.seats : 330;   // a coalition partner brings you just over the line
+      run.phase = "won"; run.end = { verdict, title, text, seats: o.seats, share: o.share, termScore };
+      persist(); buzz([20, 40, 20, 40, 60]); renderGame(); window.scrollTo(0, 0);
+      return;
     }
-    score = Math.max(0, Math.round(score));
+    endCareer({ verdict, title, text, seats: o.seats, share: o.share, ousted: o.ousted }, termScore);
+  }
+
+  function endCareer(E, extra) {
+    // Career score: every term's score, plus up to 1,500 for money left in the Treasury. At most 44,500 (see supabase/add-number-ten.sql).
+    const score = Math.max(0, Math.round((run.career || 0) + extra + clamp(Math.round(run.stats.m), 0, 300) * 5));
     const isBest = score > save.best;
     if (isBest) save.best = score;
     save.games = (save.games || 0) + 1;
-    run.phase = "over"; run.end = { verdict, title, text, score, isBest, seats: o.seats, share: o.share, ousted: o.ousted, served };
+    E.score = score; E.isBest = isBest; E.quarters = (term() - 1) * QUARTERS + (E.retired ? QUARTERS : E.ousted ? run.q : QUARTERS);
+    run.phase = "over"; run.end = E;
     persist();
-    buzz(o.ousted ? [40, 60, 90] : [20, 40, 20, 40, 60]);
+    buzz(E.ousted ? [40, 60, 90] : [20, 40, 20, 40, 60]);
     renderGame();
     window.scrollTo(0, 0);
     // When played inside HhGames, offer the score for its leaderboard.
     if (score > 0) { try { if (window.parent !== window) window.parent.postMessage({ type: "hh-score", game: "number-ten", score: score }, "*"); } catch (e) {} }
   }
 
-  function endCard() {
-    const E = run.end, p = party();
+  function nextTerm() {
+    run.term = term() + 1; run.q = 0; run.end = null;
+    run.stats.a = clamp(run.stats.a + 5, 0, 100); run.stats.u = clamp(run.stats.u + 5, 0, 100);   // a post-election honeymoon
+    buildQuarter(); persist(); renderGame(); window.scrollTo(0, 0);
+  }
+  function retire() {
+    const wins = term();
+    endCareer({ verdict: "Retired", retired: true, title: "You stepped down on a high",
+      text: "After winning " + wins + (wins === 1 ? " election" : " elections") + ", you leave Downing Street on your own terms. The history books will be kind." }, 0);
+  }
+
+  function seatChart(paper, seats, share) {
+    const p = party();
+    const big = el("div", "bigseats", "0"); paper.appendChild(big);
+    paper.appendChild(el("p", null, p.name + " seats · " + Math.round(share * 100) + "% of the vote"));
+    // Share the remaining seats out among the other parties.
+    const others = Object.entries(PARTIES).filter(([id]) => id !== run.party);   // your own party runs against all four
+    const weights = { lab: 0.36, con: 0.3, ld: 0.14, ref: 0.14 };
+    const restSeats = 650 - seats, wsum = others.reduce((t, [id]) => t + weights[id], 0) + 0.12;
+    const rows = [[p.name, p.color, seats]];
+    others.forEach(([id, op]) => { rows.push([op.name, op.color, Math.round(restSeats * weights[id] / wsum)]); });
+    rows.push(["Others", "#9a9a9a", 650 - rows.reduce((t, r) => t + r[2], 0)]);
+    const bar = el("div", "seatbar"); bar.setAttribute("aria-hidden", "true");
+    const segs = rows.map((r) => { const i = el("i"); i.style.background = r[1]; bar.appendChild(i); return i; });
+    paper.appendChild(bar);
+    const leg = el("div", "legend");
+    rows.forEach((r) => { const a = el("span"); const sw = el("i"); sw.style.background = r[1]; a.append(sw, r[0]); leg.append(a, el("span", null, String(r[2]))); });
+    paper.appendChild(leg);
+    requestAnimationFrame(() => requestAnimationFrame(() => { segs.forEach((sg, i) => { sg.style.width = (rows[i][2] / 650 * 100) + "%"; }); }));
+    const t0 = performance.now();
+    (function tick(t) { const k = Math.min(1, (t - t0) / 1400); big.textContent = Math.round(seats * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); })(t0);
+    const need = el("p", null, "326 seats needed for a majority."); need.style.marginTop = "8px"; need.style.fontSize = ".88rem"; paper.appendChild(need);
+  }
+  const ORD = ["first", "second", "third", "fourth", "fifth", "sixth"];
+  const outline = (b) => { b.style.background = "transparent"; b.style.color = "var(--paperInk)"; b.style.boxShadow = "inset 0 0 0 2px var(--paperInk)"; };
+
+  function wonCard() {
+    const E = run.end, last = term() >= MAX_TERMS;
     const paper = el("article", "paper");
-    const kick = el("div", "kick"); kick.appendChild(el("span", null, E.ousted ? "Breaking news" : "Election night")); kick.appendChild(el("span", null, quarterLabel(Math.min(run.q, QUARTERS - 1))));
+    const kick = el("div", "kick"); kick.appendChild(el("span", null, "Election night")); kick.appendChild(el("span", null, quarterLabel(QUARTERS - 1)));
     paper.appendChild(kick);
     const v = el("div"); v.style.marginTop = "12px"; v.appendChild(el("span", "verdict", E.verdict)); paper.appendChild(v);
     paper.appendChild(el("h2", null, E.title));
     paper.appendChild(el("p", null, E.text));
-    if (!E.ousted) {
-      const big = el("div", "bigseats", "0"); paper.appendChild(big);
-      paper.appendChild(el("p", null, p.name + " seats · " + Math.round(E.share * 100) + "% of the vote"));
-      // Share the remaining seats out among the other parties.
-      const others = Object.entries(PARTIES).filter(([id]) => id !== run.party);   // your own party runs against all four
-      const weights = { lab: 0.36, con: 0.3, ld: 0.14, ref: 0.14 };
-      let restSeats = 650 - E.seats, wsum = others.reduce((t, [id]) => t + weights[id], 0) + 0.12;
-      const rows = [[p.name, p.color, E.seats]];
-      others.forEach(([id, op]) => { rows.push([op.name, op.color, Math.round(restSeats * weights[id] / wsum)]); });
-      rows.push(["Others", "#9a9a9a", 650 - rows.reduce((t, r) => t + r[2], 0)]);
-      const bar = el("div", "seatbar"); bar.setAttribute("aria-hidden", "true");
-      const segs = rows.map((r) => { const i = el("i"); i.style.background = r[1]; bar.appendChild(i); return i; });
-      paper.appendChild(bar);
-      const leg = el("div", "legend");
-      rows.forEach((r) => { const a = el("span"); const sw = el("i"); sw.style.background = r[1]; a.append(sw, r[0]); leg.append(a, el("span", null, String(r[2]))); });
-      paper.appendChild(leg);
-      requestAnimationFrame(() => requestAnimationFrame(() => { segs.forEach((sg, i) => { sg.style.width = (rows[i][2] / 650 * 100) + "%"; }); }));
-      const t0 = performance.now();
-      (function tick(t) { const k = Math.min(1, (t - t0) / 1400); big.textContent = Math.round(E.seats * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); })(t0);
-      const need = el("p", null, "326 seats needed for a majority."); need.style.marginTop = "8px"; need.style.fontSize = ".88rem"; paper.appendChild(need);
-    } else {
-      paper.appendChild(el("p", null, "You lasted " + E.served + (E.served === 1 ? " quarter" : " quarters") + " in Downing Street."));
-    }
+    seatChart(paper, E.seats, E.share);
     const sc = el("div"); sc.style.margin = "14px 0";
-    sc.appendChild(el("span", "label", "Legacy score"));
+    sc.appendChild(el("span", "label", "Career score so far"));
+    const n = el("div", "bigseats", run.career.toLocaleString("en-GB")); n.style.fontSize = "2.6rem"; sc.appendChild(n);
+    sc.appendChild(el("p", null, "+" + E.termScore.toLocaleString("en-GB") + " for your " + ORD[term() - 1] + " term. " + (last
+      ? "You've led the country for 25 years. It's time to hand over to someone new."
+      : "Serve another term to keep adding to it, but voters get a little more tired of you every time. If you lose, you still keep your score.")));
+    paper.appendChild(sc);
+    if (!last) {
+      const go = el("button", "btn wide", "Serve a " + ORD[term()] + " term"); go.type = "button"; go.onclick = nextTerm;
+      paper.appendChild(go);
+    }
+    const ret = el("button", "btn wide", "Retire on a high"); ret.type = "button"; ret.onclick = retire;
+    if (!last) { ret.style.marginTop = "10px"; outline(ret); }
+    paper.appendChild(ret);
+    return paper;
+  }
+
+  function endCard() {
+    const E = run.end, p = party();
+    const paper = el("article", "paper");
+    const kick = el("div", "kick"); kick.appendChild(el("span", null, E.ousted || E.retired ? "Breaking news" : "Election night")); kick.appendChild(el("span", null, quarterLabel(Math.min(run.q, QUARTERS - 1))));
+    paper.appendChild(kick);
+    const v = el("div"); v.style.marginTop = "12px"; v.appendChild(el("span", "verdict", E.verdict)); paper.appendChild(v);
+    paper.appendChild(el("h2", null, E.title));
+    paper.appendChild(el("p", null, E.text));
+    if (!E.ousted && !E.retired) seatChart(paper, E.seats, E.share);
+    const qs = E.quarters != null ? E.quarters : QUARTERS, years = qs / 4, wins = term() - 1 + (E.retired ? 1 : 0);
+    paper.appendChild(el("p", null, "You spent " + (years < 1 ? qs + (qs === 1 ? " quarter" : " quarters") : (Math.round(years * 4) / 4) + (years === 1 ? " year" : " years"))
+      + " in Downing Street and won " + wins + (wins === 1 ? " election." : " elections.")));
+    const sc = el("div"); sc.style.margin = "14px 0";
+    sc.appendChild(el("span", "label", "Career score"));
     if (E.isBest) sc.appendChild(el("span", "newbest", "New best"));
     const n = el("div", "bigseats", E.score.toLocaleString("en-GB")); n.style.fontSize = "2.6rem"; sc.appendChild(n);
     sc.appendChild(el("p", null, "Best: " + save.best.toLocaleString("en-GB") + " pts"));
@@ -1219,13 +1599,16 @@ h1, h2, h3 { margin: 0; }
       "Or create your own: name it, pick a colour, choose where it stands from left to right, and pick its big focus."]);
     add("2. Hire your Cabinet", ["Six jobs to fill within your wage budget. A strong economy (above 50) raises the budget, and it stays raised.", "Skill: better results and better advice in their department.",
       "Loyalty: keeps your party united and avoids resignations.", "Media: lifts your approval every quarter."]);
-    add("3. Govern for five years", ["Each quarter brings two decisions. The icons on each choice show what it affects.",
+    add("3. Govern", ["Each quarter brings two decisions. The icons on each choice show what it affects.",
       "Your minister gives advice. Skilled ministers are usually right; weak ones often aren't.",
       "Decisions your party likes boost unity. Ones it hates cost you.", "Every fourth quarter is Budget Day.",
+      "Every other quarter there's a Commons debate against a rival leader. Answer a statistic with facts, a sad story with a story, and a personal dig with a joke. Attacking is a gamble.",
+      "Your own bills then go to a vote. Win the debate to win over other MPs, and keep unity up so your own MPs don't rebel.",
       "Tap 👥 any time to reshuffle your Cabinet."]);
     add("4. Don't get thrown out", ["Unity 10 or below: your MPs oust you.", "Approval 12 or below: you lose a confidence vote.", "Treasury −£60bn or below: the markets panic."]);
     add("5. Win the election", ["After 20 quarters the country votes. You need 326 of 650 seats for a majority.",
-      "Your legacy score counts seats, time served and money left in the Treasury."]);
+      "Win (or scrape a coalition) and you can serve another term, up to five. Voters get a bit more tired of you each time.",
+      "Or retire on a high. Your career score adds up every term: seats, time served and money left in the Treasury."]);
     const close = el("button", "btn wide", "Got it"); close.type = "button"; close.style.marginTop = "18px";
     close.onclick = () => { sh.classList.remove("help"); closeSheet(); };
     sh.appendChild(close);
