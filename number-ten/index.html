@@ -90,6 +90,7 @@ h1, h2, h3 { margin: 0; }
 .bar { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .1); overflow: hidden; margin-top: 8px; }
 .bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width .35s ease; }
 .bar i.warn { background: #ffb020; } .bar i.over { background: var(--bad); }
+.budget .bonus { margin-top: 6px; font-size: .82rem; color: var(--muted); font-weight: 700; }
 .posts { display: grid; gap: 10px; }
 .post { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 2px solid var(--line); background: rgba(255, 255, 255, .04);
   border-radius: 16px; padding: 10px 12px; cursor: pointer; }
@@ -224,6 +225,7 @@ h1, h2, h3 { margin: 0; }
   <div class="budget">
     <div class="row"><span>Wage bill</span><span id="wageText"></span></div>
     <div class="bar"><i id="wageBar"></i></div>
+    <div class="bonus" id="bonusText"></div>
   </div>
   <div class="posts" id="posts"></div>
   <div class="footer">
@@ -531,10 +533,20 @@ h1, h2, h3 { margin: 0; }
     c.trait = top <= 2 ? pick(TRAITS.low) : c.skill === top ? pick(TRAITS.skill) : c.loyalty === top ? pick(TRAITS.loyalty) : pick(TRAITS.media);
     return c;
   }
+  // Someone new joins the shortlist when a job opens up. There's always at least one cheap backbencher to pick.
+  function refill(post) {
+    const pool = run.pool[post];
+    pool.push(makeCandidate(post, Math.floor(rnd(0, 3))));
+    if (Math.min(...pool.map((c) => c.cost)) > 145) pool.push(makeCandidate(post, 0));
+    pool.sort((a, b) => a.cost - b.cost);
+  }
   function freshPool(post) { return [makeCandidate(post, 0), makeCandidate(post, 1), makeCandidate(post, 1), makeCandidate(post, 2)].sort((a, b) => a.cost - b.cost); }
   const initials = (n) => n.split(" ").map((w) => w[0]).join("");
   function avatar(c) { const a = el("div", "av", initials(c.name)); a.style.background = c.color; a.setAttribute("aria-hidden", "true"); return a; }
   const wageBill = () => POSTS.reduce((t, p) => t + (run.cabinet[p.id] ? run.cabinet[p.id].cost : 0), 0);
+  // A strong economy pays for a bigger Cabinet. The bonus is kept once earned, so a bad quarter never leaves you unable to pay your ministers.
+  const economyBonus = (e) => Math.max(0, Math.round((e - 50) * 1.2) * 10);
+  const cabBudget = () => PARTIES[run.party].budget + (run.cabBonus || 0);
   const fmtK = (k) => k >= 1000 ? "£" + (k / 1000).toFixed(2).replace(/0$/, "") + "m" : "£" + k + "k";
   const fmtBn = (m) => (m < 0 ? "−£" : "£") + Math.abs(Math.round(m)) + "bn";
   const skillOf = (post) => (post && run.cabinet[post] ? run.cabinet[post].skill : post ? 0 : 3);
@@ -584,8 +596,9 @@ h1, h2, h3 { margin: 0; }
     $("cabLead").textContent = forming
       ? "Tap each job to hire a minister. Skilled ministers handle crises better, loyal ones keep the party together, and good media performers win over voters. Stars cost more."
       : "Tap a job to reshuffle. Sacking a minister costs a little party unity. An empty job means no advice and worse results in that department.";
-    const bill = wageBill(), pct = bill / p.budget;
-    $("wageText").textContent = fmtK(bill) + " of " + fmtK(p.budget);
+    const bill = wageBill(), budget = cabBudget(), pct = bill / budget;
+    $("wageText").textContent = fmtK(bill) + " of " + fmtK(budget);
+    $("bonusText").textContent = run.cabBonus ? "Includes a " + fmtK(run.cabBonus) + " bonus from your strong economy" : "Grow the economy above 50 to raise your Cabinet budget";
     const bar = $("wageBar"); bar.style.width = Math.min(100, pct * 100) + "%"; bar.className = pct > 1 ? "over" : pct > 0.85 ? "warn" : "";
     const box = $("posts"); box.replaceChildren();
     POSTS.forEach((post) => {
@@ -633,14 +646,14 @@ h1, h2, h3 { margin: 0; }
     sh.appendChild(top);
     // Keep back enough for the cheapest candidate in every other empty job, so the Cabinet can always be filled.
     const reserve = POSTS.reduce((t, x) => t + (x.id !== postId && !run.cabinet[x.id] ? Math.min(...run.pool[x.id].map((c) => c.cost)) : 0), 0);
-    const left = p.budget - wageBill() + (cur ? cur.cost : 0) - reserve;
+    const left = cabBudget() - wageBill() + (cur ? cur.cost : 0) - reserve;
     sh.appendChild(el("p", "sub", post.desc + ". You can spend up to " + fmtK(left) + " on this job" + (reserve ? ", keeping enough back to fill your other empty jobs." : ".")));
     if (cur) {
       sh.appendChild(candCard(cur, true, left));
       if (run.hired) {
         const sack = el("button", "btn ghost wide small", "Sack " + cur.name.split(" ")[0] + " (−3 unity)"); sack.type = "button";
         sack.style.margin = "0 0 14px";
-        sack.onclick = () => { run.cabinet[postId] = null; run.stats.u = clamp(run.stats.u - 3, 0, 100); run.pool[postId].push(makeCandidate(postId, Math.floor(rnd(0, 3)))); persist(); closeSheet(); renderCabinet(); checkCollapse(); };
+        sack.onclick = () => { run.cabinet[postId] = null; run.stats.u = clamp(run.stats.u - 3, 0, 100); refill(postId); persist(); closeSheet(); renderCabinet(); checkCollapse(); };
         sh.appendChild(sack);
       }
       sh.appendChild(el("div", "label", "Other candidates"));
@@ -683,7 +696,7 @@ h1, h2, h3 { margin: 0; }
     if (old && run.hired) run.stats.u = clamp(run.stats.u - 3, 0, 100);   // sacked to make room
     run.pool[c.post] = run.pool[c.post].filter((x) => x.id !== c.id);
     if (old && !run.hired) run.pool[c.post].push(old);                     // still forming: swap back into the pool
-    else run.pool[c.post].push(makeCandidate(c.post, Math.floor(rnd(0, 3))));
+    else refill(c.post);
     run.pool[c.post].sort((a, b) => a.cost - b.cost);
     run.cabinet[c.post] = c; persist(); buzz(15);
     closeSheet(); renderCabinet();
@@ -865,7 +878,7 @@ h1, h2, h3 { margin: 0; }
       const post = POSTS.find((p) => run.cabinet[p.id] && run.cabinet[p.id].id === ev.subject);
       if (post) {
         const m = run.cabinet[post.id];
-        if (opt.sack) { run.cabinet[post.id] = null; run.pool[post.id].push(makeCandidate(post.id, Math.floor(rnd(0, 3)))); note = post.id; }
+        if (opt.sack) { run.cabinet[post.id] = null; refill(post.id); note = post.id; }
         if (opt.loyal) m.loyalty = clamp(m.loyalty + opt.loyal, 1, 5);
       }
     }
@@ -931,6 +944,9 @@ h1, h2, h3 { margin: 0; }
     const drift = {};
     ["a", "u", "e", "s", "m"].forEach((k) => { if (s[k] !== before[k]) drift[k] = s[k] - before[k]; });
     run.drift = drift;
+    const bonus = economyBonus(s.e);
+    run.bonusUp = bonus > (run.cabBonus || 0);
+    if (run.bonusUp) run.cabBonus = bonus;
     run.phase = "quarter"; persist();
     renderGame(drift);
     checkCollapse();
@@ -952,6 +968,10 @@ h1, h2, h3 { margin: 0; }
     const share = voteShare(), seats = seatsFor(share);
     const pol = el("p", null, "If there were an election tomorrow, you'd get about " + Math.round(share * 100) + "% of the vote and " + seats + " seats. You need 326 for a majority.");
     pol.style.marginTop = "12px"; paper.appendChild(pol);
+    if (run.bonusUp) {
+      const up = el("p", null, "📈 Strong economy! Your Cabinet budget has grown to " + fmtK(cabBudget()) + ", so you can afford better ministers. Tap 👥 to reshuffle.");
+      up.style.fontWeight = "800"; up.style.color = "#0d6b38"; paper.appendChild(up);
+    }
     const last = run.q + 1 >= QUARTERS;
     const b = el("button", "btn wide", last ? "Call the general election" : "Next quarter"); b.type = "button";
     b.onclick = () => {
@@ -1072,7 +1092,7 @@ h1, h2, h3 { margin: 0; }
     sh.appendChild(el("h3", null, "How to play"));
     const add = (h, items) => { sh.appendChild(el("h4", null, h)); const ul = el("ul"); items.forEach((t) => ul.appendChild(el("li", null, t))); sh.appendChild(ul); };
     add("1. Pick a party", ["Labour, Conservative, Lib Dem or Reform UK. Each has a perk, its own starting position and its own Cabinet budget."]);
-    add("2. Hire your Cabinet", ["Six jobs to fill within your wage budget.", "Skill: better results and better advice in their department.",
+    add("2. Hire your Cabinet", ["Six jobs to fill within your wage budget. A strong economy (above 50) raises the budget, and it stays raised.", "Skill: better results and better advice in their department.",
       "Loyalty: keeps your party united and avoids resignations.", "Media: lifts your approval every quarter."]);
     add("3. Govern for five years", ["Each quarter brings two decisions. The icons on each choice show what it affects.",
       "Your minister gives advice. Skilled ministers are usually right; weak ones often aren't.",
