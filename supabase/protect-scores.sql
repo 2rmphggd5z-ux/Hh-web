@@ -11,6 +11,7 @@
 -- Darts: 180 is the most one visit can score.
 -- Street to Superstar: 60 seconds at most 8 points a shot is well under 500.
 -- Tower Stack: one point a block, and 5,000 blocks is far beyond anyone.
+-- Long Shot: reputation grows with every contract; a million is far beyond anyone.
 -- Number 10: a career is at most five terms of 8,600 (650 seats, five years served) plus 1,500 for a full Treasury: 44,500.
 -- Track Star 3D and Army Rush: change these if real players ever get close.
 alter table public.scores drop constraint if exists scores_max_check;
@@ -22,6 +23,7 @@ alter table public.scores add constraint scores_max_check check (
     when 'track-star-3d'       then score <= 10000000
     when 'tower-stack'         then score <= 5000
     when 'number-ten'          then score <= 44500
+    when 'long-shot'           then score <= 1000000
     else true
   end
 ) not valid;   -- "not valid" leaves scores that are already saved alone

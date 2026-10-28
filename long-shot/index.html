@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Long Shot</title>
+<meta name="description" content="A sniper contracts game. Find the right target in the crowd, allow for wind and distance, take the shot, then spend your pay on upgrades.">
+<meta name="theme-color" content="#0d1210">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Long Shot">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+:root {
+  --bg: #0d1210;
+  --panel: #161d1a;
+  --panel2: #1f2924;
+  --line: rgba(255, 255, 255, .13);
+  --ink: #f2f5f1;
+  --muted: rgba(242, 245, 241, .62);
+  --green: #6cf08f;
+  --amber: #ffbf3c;
+  --red: #ff5a52;
+  --font: "Avenir Next", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.wrap { max-width: 560px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 14px 24px; font-weight: 900;
+  font-size: 1.02rem; letter-spacing: .04em; text-transform: uppercase; background: var(--green); color: #07140c; cursor: pointer; box-shadow: 0 4px 0 rgba(0, 0, 0, .45); }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, .45); }
+.btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); box-shadow: none; }
+.btn.amber { background: var(--amber); color: #1d1300; }
+.btn.small { padding: 9px 14px; font-size: .82rem; border-radius: 10px; }
+.btn.wide { width: 100%; }
+.btn[disabled] { opacity: .4; cursor: not-allowed; transform: none; }
+.label { font-size: .7rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+/* title */
+#title { justify-content: space-between; text-align: center;
+  background: radial-gradient(circle at 50% 34%, rgba(108, 240, 143, .14), transparent 55%), var(--bg); }
+.scopeart { width: 230px; height: 230px; margin: 34px auto 0; border-radius: 50%; position: relative; border: 10px solid #0a0d0c;
+  box-shadow: 0 0 0 3px #2b3631, 0 0 60px rgba(108, 240, 143, .2) inset, 0 20px 50px rgba(0, 0, 0, .6);
+  background: radial-gradient(circle at 50% 40%, #2c4a3a, #0f1a15 70%); overflow: hidden; }
+.scopeart::before, .scopeart::after { content: ""; position: absolute; background: rgba(0, 0, 0, .85); }
+.scopeart::before { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; }
+.scopeart::after { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; }
+.scopeart i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px var(--red); }
+.scopeart b { position: absolute; left: 50%; top: 58%; width: 22px; height: 46px; margin-left: -11px; border-radius: 11px 11px 4px 4px; background: #3d5c4b; }
+.scopeart b::before { content: ""; position: absolute; left: 3px; top: -18px; width: 16px; height: 16px; border-radius: 50%; background: #3d5c4b; }
+h1.logo { font-size: clamp(3rem, 15vw, 4.4rem); font-weight: 900; letter-spacing: -.02em; margin: 24px 0 0; line-height: .95; text-transform: uppercase; font-style: italic; }
+h1.logo span { color: var(--green); }
+.tagline { color: var(--muted); max-width: 30ch; margin: 12px auto 0; line-height: 1.45; }
+.stack { display: grid; gap: 12px; margin-top: 22px; }
+
+/* hub */
+.hubtop { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.hubtop h2 { flex: 1; margin: 0; font-size: 1.35rem; text-transform: uppercase; letter-spacing: .04em; font-style: italic; }
+.iconbtn { width: 42px; height: 42px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); display: grid; place-items: center; cursor: pointer; font-size: 1.05rem; flex: none; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.stat .v { font-family: var(--mono); font-size: 1.35rem; font-weight: 800; margin-top: 2px; }
+.stat .v.money { color: var(--green); }
+.rankbar { height: 6px; border-radius: 9px; background: rgba(255, 255, 255, .1); margin-top: 6px; overflow: hidden; }
+.rankbar i { display: block; height: 100%; background: var(--amber); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--panel); padding: 5px; border-radius: 14px; margin-bottom: 12px; }
+.tab { border: 0; border-radius: 10px; padding: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; font-size: .82rem; background: transparent; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--panel2); color: var(--ink); }
+.list { display: grid; gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.card.risky { border-color: rgba(255, 90, 82, .5); }
+.card h3 { margin: 0; font-size: 1.08rem; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.card h3 small { font-family: var(--mono); color: var(--green); font-size: 1rem; }
+.card p { margin: 6px 0 10px; color: var(--muted); font-size: .9rem; line-height: 1.4; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { font-size: .76rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: rgba(255, 255, 255, .07); font-family: var(--mono); }
+.chip.warn { background: rgba(255, 90, 82, .16); color: #ffb3ae; }
+.chip.good { background: rgba(108, 240, 143, .14); color: var(--green); }
+.cardrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pips { display: flex; gap: 4px; }
+.pips i { width: 16px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .14); }
+.pips i.on { background: var(--green); }
+.note { color: var(--muted); font-size: .85rem; text-align: center; line-height: 1.4; margin-top: 12px; }
+
+/* mission */
+#game { position: fixed; inset: 0; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#game canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hud { position: absolute; left: 0; right: 0; top: 0; display: flex; gap: 8px; align-items: flex-start; pointer-events: none;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px)); }
+.hudbox { background: rgba(5, 9, 7, .72); border: 1px solid rgba(255, 255, 255, .14); border-radius: 12px; padding: 7px 10px; font-family: var(--mono); font-size: .8rem; font-weight: 700;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.hudbox b { color: var(--green); }
+.hudbox.time.low b { color: var(--red); }
+.brief { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: center; }
+#game .brief canvas { position: static; width: 44px; height: 54px; border-radius: 8px; background: #22302a; flex: none; }
+.brief .txt { min-width: 0; font-family: var(--font); font-size: .78rem; line-height: 1.3; }
+.brief .txt b { color: var(--amber); display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+.brief .done { text-decoration: line-through; opacity: .5; }
+.hudcol { display: grid; gap: 6px; justify-items: end; }
+.ctrl { position: absolute; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; align-items: flex-end; }
+.ctrl.left { left: max(14px, env(safe-area-inset-left, 0px)); }
+.ctrl.right { right: max(14px, env(safe-area-inset-right, 0px)); }
+.round { width: 74px; height: 74px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .5); background: rgba(5, 9, 7, .6); color: #fff; font-weight: 900;
+  font-size: .72rem; letter-spacing: .08em; display: grid; place-items: center; cursor: pointer; text-transform: uppercase; touch-action: none; position: relative; overflow: hidden; }
+.round.fire { width: 92px; height: 92px; background: rgba(255, 90, 82, .85); border-color: #ffd0cc; font-size: .95rem; }
+.round.on { background: rgba(108, 240, 143, .35); border-color: var(--green); }
+.round .meter { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(108, 240, 143, .35); pointer-events: none; }
+.round span { position: relative; }
+.round.sm { width: 56px; height: 56px; font-size: .56rem; letter-spacing: .02em; }
+.hint { position: absolute; left: 50%; bottom: calc(130px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(92vw, 420px); text-align: center;
+  background: rgba(5, 9, 7, .78); border: 1px solid rgba(255, 255, 255, .16); border-radius: 14px; padding: 10px 14px; font-size: .9rem; line-height: 1.4; pointer-events: none; }
+.toast { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); font-weight: 900; font-size: 1.5rem; letter-spacing: .08em; text-transform: uppercase;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .6); pointer-events: none; white-space: nowrap; animation: pop .9s ease forwards; }
+@keyframes pop { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.8); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%); } }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; background: rgba(2, 5, 4, .78); display: flex; align-items: center; justify-content: center; z-index: 30;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)); }
+.panel { width: min(100%, 440px); max-height: 100%; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+.panel h2 { margin: 0 0 4px; font-size: 1.6rem; text-transform: uppercase; font-style: italic; letter-spacing: .02em; }
+.panel h2.ok { color: var(--green); } .panel h2.bad { color: var(--red); }
+.panel p { color: var(--muted); line-height: 1.45; margin: 6px 0 12px; }
+.rows { display: grid; gap: 2px; margin: 10px 0 16px; font-family: var(--mono); font-size: .9rem; }
+.rows div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.rows div.total { font-weight: 900; color: var(--green); border-bottom: 0; font-size: 1.05rem; }
+.help h4 { margin: 14px 0 4px; color: var(--amber); text-transform: uppercase; font-size: .8rem; letter-spacing: .12em; }
+.help ul { margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.5; font-size: .92rem; }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+</style>
+</head>
+<body>
+
+<section class="wrap" id="title">
+  <div>
+    <div class="scopeart" aria-hidden="true"><b></b><i></i></div>
+    <h1 class="logo">Long <span>Shot</span></h1>
+    <p class="tagline">Take the contract. Find the target in the crowd. One shot, no mistakes.</p>
+  </div>
+  <div class="stack">
+    <button class="btn wide" id="playBtn" type="button">Play</button>
+    <button class="btn ghost wide" id="howBtn" type="button">How to play</button>
+  </div>
+</section>
+
+<section class="wrap" id="hub" hidden>
+  <div class="hubtop">
+    <button class="iconbtn" id="hubBack" type="button" aria-label="Back to title">←</button>
+    <h2>Safehouse</h2>
+    <button class="iconbtn" id="soundBtn" type="button" aria-label="Sound on">🔊</button>
+    <button class="iconbtn" id="hubHelp" type="button" aria-label="How to play">?</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="label">Cash</div><div class="v money" id="cash"></div></div>
+    <div class="stat"><div class="label" id="rankName"></div><div class="v" id="repText"></div><div class="rankbar"><i id="rankBar"></i></div></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabC" type="button" aria-selected="true">Contracts</button>
+    <button class="tab" role="tab" id="tabA" type="button" aria-selected="false">Armoury</button>
+  </div>
+  <div class="list" id="contracts"></div>
+  <div class="list" id="armoury" hidden></div>
+  <div class="note" id="hubNote"></div>
+</section>
+
+<div id="game" hidden>
+  <canvas id="cv"></canvas>
+  <div class="hud">
+    <div class="hudbox brief" id="brief"></div>
+    <div class="hudcol">
+      <div class="hudbox time" id="timeBox">⏱ <b id="timeText"></b></div>
+      <div class="hudbox">⦿ <b id="ammoText"></b></div>
+      <div class="hudbox" id="windBox"></div>
+      <div class="hudbox">↦ <b id="distText"></b></div>
+    </div>
+  </div>
+  <div class="ctrl left" id="ctrlL" hidden>
+    <button class="round" id="breathBtn" type="button" aria-label="Hold breath"><div class="meter" id="breathMeter"></div><span>Hold<br>breath</span></button>
+  </div>
+  <div class="ctrl right" id="ctrlR" hidden>
+    <div style="display:grid;gap:10px;justify-items:center">
+      <button class="round sm" id="thermalBtn" type="button" hidden><span>Thermal</span></button>
+      <button class="round sm" id="unscopeBtn" type="button" aria-label="Zoom out"><span>Zoom<br>out</span></button>
+    </div>
+    <button class="round fire" id="fireBtn" type="button"><span>Fire</span></button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div id="toasts"></div>
+</div>
+
+<div class="overlay" id="overlay" hidden><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const fmt$ = (n) => "$" + Math.round(n).toLocaleString("en-GB");
+  const KEY = "long-shot";
+  const TEST = /[?&]test\b/.test(location.search);
+
+  // ---------- save
+  let save = { cash: 0, rep: 0, best: 0, up: {}, board: null, done: 0, failed: 0, sound: true, seenHelp: false };
+  try { save = Object.assign(save, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
+
+  // ---------- ranks and upgrades
+  const RANKS = [[0, "Rookie"], [60, "Marksman"], [160, "Sharpshooter"], [320, "Specialist"], [560, "Ghost"], [900, "Phantom"], [1400, "Legend"]];
+  function rankIndex(rep) { let i = 0; RANKS.forEach((r, k) => { if (rep >= r[0]) i = k; }); return i; }
+  const UPGRADES = [
+    { id: "scope", name: "Scope", icon: "🔭", desc: "More zoom, so you can pick out details from further away.", costs: [700, 1800, 4200], vals: [3, 4.2, 5.6, 7.5] },
+    { id: "stab", name: "Stabiliser", icon: "🎯", desc: "Less sway when you aim.", costs: [600, 1500, 3600], vals: [1, 0.72, 0.5, 0.32] },
+    { id: "breath", name: "Breath control", icon: "🫁", desc: "Hold your breath for longer.", costs: [500, 1300, 3000], vals: [2.2, 3.5, 5, 7] },
+    { id: "rifle", name: "Rifle", icon: "⚡", desc: "Faster bullets: less drop, less drift, less leading.", costs: [900, 2400, 5200], vals: [1, 1.35, 1.75, 2.3] },
+    { id: "mag", name: "Magazine", icon: "🧰", desc: "More shots per contract.", costs: [400, 1100, 2600], vals: [3, 4, 5, 6] },
+    { id: "silencer", name: "Silencer", icon: "🤫", desc: "Only people near the shot hear it, so the crowd doesn't panic.", costs: [1800], vals: [0, 1] },
+    { id: "dossier", name: "Dossier photos", icon: "🗂️", desc: "A photo of every target in your briefing.", costs: [1200], vals: [0, 1] },
+    { id: "thermal", name: "Thermal scope", icon: "🌡️", desc: "See people glowing in the dark. Great for night contracts.", costs: [2800], vals: [0, 1] },
+    { id: "ballistic", name: "Ballistics computer", icon: "🧮", desc: "Shows where the bullet will land after wind and drop.", costs: [4500], vals: [0, 1] },
+    { id: "facial", name: "Target recognition", icon: "🧠", desc: "Tells you if the person in your crosshair is a target.", costs: [6000], vals: [0, 1] },
+  ];
+  const UP = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
+  const lvl = (id) => save.up[id] || 0;
+  const val = (id) => UP[id].vals[lvl(id)];
+
+  // ---------- looks
+  const SKINS = ["#f1c7a1", "#d9a37b", "#b67a54", "#8a5636", "#5e3a24"];
+  const HAIRS = { black: "#1d1a19", brown: "#6b4426", blonde: "#e6c46c", ginger: "#c2602a", grey: "#a8a8a8" };
+  const COLS = { red: "#d6332b", blue: "#2f62d6", green: "#2f9a52", yellow: "#efc22b", white: "#eeeeee", black: "#222426", grey: "#8a8f94", purple: "#7a44c9", orange: "#ec7a24", pink: "#ec6fa6" };
+  const HATS = ["none", "cap", "fedora", "beanie"];
+  const HAT_NAMES = { cap: "cap", fedora: "hat", beanie: "beanie" };
+  function randomLook() {
+    return { skin: pick(SKINS), hair: pick(Object.keys(HAIRS)), hat: Math.random() < 0.55 ? "none" : pick(HATS.slice(1)), hatC: pick(Object.keys(COLS)),
+      top: pick(Object.keys(COLS)), legs: pick(["#2b2f3a", "#3b3226", "#22252a", "#4a5568", "#1f3b63"]), acc: Math.random() < 0.65 ? "none" : pick(["briefcase", "glasses"]) };
+  }
+  // Clues: three facts that only the target matches.
+  function clueList(look, kind) {
+    const c = [];
+    c.push(look.hat === "none" ? { k: "hat", v: "none", t: "no hat" } : { k: "hat", v: look.hat + look.hatC, t: look.hatC + " " + HAT_NAMES[look.hat] });
+    c.push({ k: "top", v: look.top, t: look.top + " top" });
+    c.push({ k: "hair", v: look.hair, t: look.hair + " hair" });
+    if (look.acc === "glasses") c.push({ k: "acc", v: "glasses", t: "sunglasses" });
+    if (look.acc === "briefcase" && kind !== "window") c.push({ k: "acc", v: "briefcase", t: "briefcase" });
+    return c;
+  }
+  function matches(look, clues) {
+    return clues.every((c) => c.k === "hat" ? (look.hat === "none" ? "none" : look.hat + look.hatC) === c.v : c.k === "acc" ? look.acc === c.v : look[c.k] === c.v);
+  }
+
+  // ---------- contracts
+  const CODES = ["Nightjar", "Copperhead", "Blackwater", "Kestrel", "Iron Gate", "Red Lantern", "Silver Fox", "Glass Tower", "Old Harbour", "Paper Crown", "Low Tide", "Northwind", "Cold Coffee", "Stray Dog", "Last Orders"];
+  const VILLAINS = ["a smuggling boss", "a crooked arms dealer", "a hacker selling state secrets", "a jewel thief", "a gang enforcer", "a corrupt banker",
+    "a forger flooding the city with fake cash", "a spy selling secrets", "a double agent", "a racketeer", "a cyber-criminal", "a black-market kingpin"];
+  const PLACES = { day: ["Kingsway Street", "Market Square", "The Old Exchange"], dusk: ["Harbour Row", "Riverside Plaza", "Union Street"], night: ["The Neon Strip", "Dockside", "Grand Hotel"] };
+  function genContract(L, risky) {
+    L = Math.max(0, L);
+    const scene = L >= 2 && Math.random() < 0.3 ? "night" : L >= 1 && Math.random() < 0.4 ? "dusk" : "day";
+    const n = L >= 4 && Math.random() < 0.3 ? 3 : L >= 2 && Math.random() < 0.4 ? 2 : 1;
+    const dist = Math.round((180 + L * 70 + rnd(0, 140)) / 10) * 10;
+    const wind = L === 0 ? 0 : Math.round(rnd(0, 0.8 + L * 0.7) * 10) / 10 * (Math.random() < 0.5 ? -1 : 1);
+    const kinds = L === 0 ? ["window"] : L === 1 ? ["window", "balcony", "street"] : ["window", "balcony", "street", "street", "roof"];
+    const targets = Array.from({ length: n }, () => pick(kinds));
+    const time = Math.max(40, 95 - L * 6 - n * 5);
+    const crowd = Math.min(36, 14 + L * 3);
+    const pay = Math.round((450 + L * 380 + dist * 1.4 + Math.abs(wind) * 140 + (n - 1) * 700 + (scene === "night" ? 600 : 0) + targets.filter((k) => k === "street").length * 250) * rnd(0.9, 1.15) / 10) * 10;
+    const taken = (save.board || []).map((x) => x.code);
+    return { id: Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), code: pick(CODES.filter((x) => !taken.includes(x))), villain: pick(VILLAINS), place: pick(PLACES[scene]),
+      L, risky: !!risky, scene, n, dist, wind, targets, time, crowd, pay, rep: 10 + L * 6 + (n - 1) * 6 };
+  }
+  function freshBoard() {
+    const L = rankIndex(save.rep);
+    save.board = [];
+    [genContract(L - 1), genContract(L), genContract(L + 1, true)].forEach((c) => { c.code = pick(CODES.filter((x) => !save.board.some((b) => b.code === x))); save.board.push(c); });
+    persist();
+  }
+
+  // ---------- audio
+  let ac = null;
+  function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (ac && ac.state === "suspended") ac.resume(); return ac; }
+  function noise(dur, vol, freq) {
+    if (!save.sound) return; const a = audio(); if (!a) return;
+    const len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const s = a.createBufferSource(); s.buffer = buf;
+    const f = a.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = freq;
+    const g = a.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+  }
+  function tone(freqs, dur, type) {
+    if (!save.sound) return; const a = audio(); if (!a) return;
+    freqs.forEach((fq, i) => {
+      const o = a.createOscillator(), g = a.createGain(); o.type = type || "triangle"; o.frequency.value = fq;
+      const t = a.currentTime + i * dur; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+    });
+  }
+  const sfx = {
+    shot: () => (val("silencer") ? noise(0.18, 0.5, 900) : noise(0.55, 1.1, 2600)),
+    click: () => tone([180], 0.06, "square"),
+    hit: () => tone([660, 880], 0.08),
+    win: () => tone([523, 659, 784, 1046], 0.12),
+    fail: () => tone([330, 247, 196], 0.18, "sawtooth"),
+  };
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  // ---------- screens
+  function show(id) { ["title", "hub"].forEach((s) => { $(s).hidden = s !== id; }); $("game").hidden = id !== "game"; window.scrollTo(0, 0); }
+
+  let tab = "c";
+  function renderHub() {
+    if (!save.board) freshBoard();
+    show("hub");
+    $("cash").textContent = fmt$(save.cash);
+    const ri = rankIndex(save.rep), next = RANKS[ri + 1];
+    $("rankName").textContent = "Rank: " + RANKS[ri][1];
+    $("repText").textContent = save.rep + " rep";
+    $("rankBar").style.width = next ? ((save.rep - RANKS[ri][0]) / (next[0] - RANKS[ri][0]) * 100) + "%" : "100%";
+    $("soundBtn").textContent = save.sound ? "🔊" : "🔇"; $("soundBtn").setAttribute("aria-label", save.sound ? "Sound on" : "Sound off");
+    $("tabC").setAttribute("aria-selected", String(tab === "c")); $("tabA").setAttribute("aria-selected", String(tab === "a"));
+    $("contracts").hidden = tab !== "c"; $("armoury").hidden = tab !== "a";
+    tab === "c" ? renderContracts() : renderArmoury();
+    $("hubNote").textContent = tab === "c" ? (next ? (next[0] - save.rep) + " rep to " + next[1] + ". Higher ranks bring bigger contracts." : "You're a Legend. Every contract pays top rates.")
+      : "Upgrades are yours for good.";
+  }
+  function renderContracts() {
+    const box = $("contracts"); box.replaceChildren();
+    save.board.forEach((c) => {
+      const card = el("div", "card" + (c.risky ? " risky" : ""));
+      const h = el("h3"); h.append("Operation " + c.code); h.appendChild(el("small", null, fmt$(c.pay))); card.appendChild(h);
+      card.appendChild(el("p", null, (c.n > 1 ? c.n + " targets, all working for " : "Target: ") + c.villain + ". Location: " + c.place + "."));
+      const chips = el("div", "chips");
+      const chip = (t, cls) => chips.appendChild(el("span", "chip" + (cls ? " " + cls : ""), t));
+      chip(["☀️ Day", "🌆 Dusk", "🌙 Night"][["day", "dusk", "night"].indexOf(c.scene)], c.scene === "night" && !val("thermal") ? "warn" : "");
+      chip("↦ " + c.dist + " m");
+      chip("💨 " + (c.wind ? Math.abs(c.wind) + " m/s " + (c.wind > 0 ? "→" : "←") : "calm"), Math.abs(c.wind) >= 3 ? "warn" : "");
+      chip("⏱ " + c.time + "s");
+      if (c.targets.includes("street")) chip("🚶 moving target", "warn");
+      chip("+" + c.rep + " rep", "good");
+      if (c.risky) chip("Risky", "warn");
+      card.appendChild(chips);
+      const row = el("div", "cardrow");
+      const pips = el("div", "pips"); pips.setAttribute("aria-label", "Difficulty " + (c.L + 1));
+      for (let i = 0; i < 6; i++) pips.appendChild(el("i", i <= c.L ? "on" : ""));
+      row.appendChild(pips);
+      const b = el("button", "btn small", "Accept"); b.type = "button"; b.onclick = () => startMission(c);
+      row.appendChild(b); card.appendChild(row);
+      box.appendChild(card);
+    });
+    const re = el("button", "btn ghost wide small", "New contracts (" + fmt$(100) + ")"); re.type = "button";
+    re.disabled = save.cash < 100;
+    re.onclick = () => { save.cash -= 100; freshBoard(); renderHub(); };
+    box.appendChild(re);
+  }
+  function renderArmoury() {
+    const box = $("armoury"); box.replaceChildren();
+    UPGRADES.forEach((u) => {
+      const L = lvl(u.id), max = u.costs.length, cost = u.costs[L];
+      const card = el("div", "card");
+      const h = el("h3"); h.append(u.icon + " " + u.name); if (L < max) h.appendChild(el("small", null, fmt$(cost))); card.appendChild(h);
+      card.appendChild(el("p", null, u.desc));
+      const row = el("div", "cardrow");
+      const pips = el("div", "pips"); pips.setAttribute("aria-label", "Level " + L + " of " + max);
+      for (let i = 0; i < max; i++) pips.appendChild(el("i", i < L ? "on" : ""));
+      row.appendChild(pips);
+      if (L >= max) row.appendChild(el("span", "chip good", "Maxed"));
+      else {
+        const b = el("button", "btn small" + (save.cash >= cost ? "" : " ghost"), save.cash >= cost ? "Buy" : "Need " + fmt$(cost - save.cash)); b.type = "button";
+        b.disabled = save.cash < cost;
+        b.onclick = () => { save.cash -= cost; save.up[u.id] = L + 1; persist(); sfx.hit(); buzz(20); renderHub(); };
+        row.appendChild(b);
+      }
+      card.appendChild(row); box.appendChild(card);
+    });
+  }
+  $("tabC").onclick = () => { tab = "c"; renderHub(); };
+  $("tabA").onclick = () => { tab = "a"; renderHub(); };
+  $("hubBack").onclick = () => show("title");
+  $("soundBtn").onclick = () => { save.sound = !save.sound; persist(); renderHub(); };
+  $("playBtn").onclick = () => { audio(); renderHub(); };
+  $("howBtn").onclick = () => openHelp();
+  $("hubHelp").onclick = () => openHelp();
+
+  function openOverlay(build) { const p = $("panel"); p.replaceChildren(); p.classList.remove("help"); build(p); $("overlay").hidden = false; const b = p.querySelector("button"); if (b) b.focus({ preventScroll: true }); }
+  function closeOverlay() { $("overlay").hidden = true; }
+  function openHelp(after) {
+    openOverlay((p) => {
+      p.classList.add("help");
+      p.appendChild(el("h2", null, "How to play"));
+      const add = (h, items) => { p.appendChild(el("h4", null, h)); const ul = el("ul"); items.forEach((t) => ul.appendChild(el("li", null, t))); p.appendChild(ul); };
+      add("1. Take a contract", ["Pick a job from the board. Risky ones pay more.", "Read the briefing: three clues describe your target."]);
+      add("2. Find the target", ["Tap anywhere on the scene to look through the scope.", "Drag to move your aim. Check people's hats, tops, hair, sunglasses and briefcases."]);
+      add("3. Take the shot", ["Hold your breath to steady the scope, then tap Fire.", "Bullets take time to arrive. Lead moving targets and allow for wind (the marks on your crosshair help).", "Never hit a bystander: the contract is cancelled."]);
+      add("4. Don't let them escape", ["Miss and the crowd panics. Your target runs for an exit or ducks out of sight.", "A silencer keeps people calm. Run out of time or bullets and the job fails."]);
+      add("5. Upgrade", ["Spend your pay in the Armoury: better scope, steadier aim, faster bullets, a silencer and more."]);
+      const b = el("button", "btn wide", "Got it"); b.type = "button"; b.style.marginTop = "18px";
+      b.onclick = () => { closeOverlay(); save.seenHelp = true; persist(); if (after) after(); };
+      p.appendChild(b);
+    });
+  }
+
+  // ---------- world
+  const W = 1000, H = 1300;
+  const ROOF = 170, FLOOR_H = 150, BLD_L = 120, BLD_R = 880;
+  const BALCONY_FLOORS = [1, 3];
+  const WINDOW_FLOORS = [0, 2, 4, 5];
+  const WIN_X = [160, 335, 510, 685], WIN_W = 115, WIN_H = 100;
+  const STREET_Y = [1212, 1236];
+  const DOOR_X = 500;
+  const floorTop = (i) => ROOF + i * FLOOR_H;
+  const balconyY = (i) => floorTop(i) + FLOOR_H - 8;
+
+  let cv = $("cv"), ctx = cv.getContext("2d"), dpr = 1, sw = 0, sh = 0;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2); sw = window.innerWidth; sh = window.innerHeight;
+    cv.width = Math.round(sw * dpr); cv.height = Math.round(sh * dpr);
+  }
+  window.addEventListener("resize", resize);
+  const baseScale = () => Math.min(sw / W, sh / H) * 0.98;
+
+  let M = null;   // the mission in progress
+  let pid = 0;
+  function makePerson(kind, look, opts) {
+    const p = Object.assign({ id: ++pid, kind, look, state: "idle", dir: Math.random() < 0.5 ? -1 : 1, t: rnd(0, 3), walk: rnd(0, 6), speed: rnd(18, 32), x: 0, y: 0, alpha: 1 }, opts || {});
+    return p;
+  }
+  function placePerson(kind, used) {
+    if (kind === "window") {
+      for (let tries = 0; tries < 40; tries++) {
+        const f = pick(WINDOW_FLOORS), w = Math.floor(Math.random() * 4), key = f + ":" + w;
+        if (used.has(key)) continue;
+        used.add(key);
+        const x0 = WIN_X[w];
+        return { x: x0 + WIN_W / 2 + rnd(-20, 20), y: floorTop(f) + 25 + WIN_H + 8, wx: x0, wy: floorTop(f) + 25, min: x0 + 22, max: x0 + WIN_W - 22, floor: f, speed: rnd(6, 12) };
+      }
+      return null;
+    }
+    if (kind === "balcony") { const f = pick(BALCONY_FLOORS); return { x: rnd(200, 800), y: balconyY(f), min: 170, max: 830, floor: f, exitX: f === 1 ? 160 : 840 }; }
+    if (kind === "roof") return { x: rnd(220, 720), y: ROOF, min: 190, max: 740, exitX: 790 };
+    const lane = Math.random() < 0.5 ? 0 : 1;
+    return { x: rnd(-20, W + 20), y: STREET_Y[lane] + rnd(-3, 3), min: -60, max: W + 60, lane };
+  }
+
+  function startMission(c) {
+    resize();
+    const used = new Set();
+    const people = [];
+    const targetLooks = [];
+    // Targets first.
+    const targets = c.targets.map((kind) => {
+      const look = randomLook();
+      if (kind === "window" && look.acc === "briefcase") look.acc = "none";
+      let pos = placePerson(kind, used);
+      if (!pos) { kind = "street"; pos = placePerson("street", used); }
+      const all = clueList(look, kind);
+      // Pick three clues, mixing which ones so it isn't always the same.
+      const clues = all.sort(() => Math.random() - 0.5).slice(0, 3);
+      targetLooks.push(look);
+      const p = makePerson(kind, look, Object.assign(pos, { target: true, clues }));
+      if (kind === "street") p.speed = rnd(16, 24 + c.L * 3);
+      people.push(p);
+      return p;
+    });
+    // The crowd. Some deliberately share clues with a target to make it harder.
+    const share = clamp(0.15 + c.L * 0.08, 0.15, 0.6);
+    for (let i = 0; i < c.crowd; i++) {
+      const r = Math.random(), kind = r < 0.3 ? "window" : r < 0.48 ? "balcony" : r < 0.56 && c.L >= 1 ? "roof" : "street";
+      const pos = placePerson(kind, used); if (!pos) continue;
+      let look = randomLook();
+      if (Math.random() < share) {   // a near-miss decoy
+        const t = pick(targets);
+        look = Object.assign({}, t.look, { skin: pick(SKINS), legs: look.legs });
+        const change = pick(t.clues);
+        for (let k = 0; k < 20 && matches(look, t.clues); k++) {
+          if (change.k === "hat") { look.hat = pick(HATS); look.hatC = pick(Object.keys(COLS)); }
+          else if (change.k === "acc") look.acc = look.acc === "none" ? "glasses" : "none";
+          else if (change.k === "top") look.top = pick(Object.keys(COLS));
+          else look.hair = pick(Object.keys(HAIRS));
+        }
+      }
+      // Nobody else may match every clue of a target.
+      targets.forEach((t) => { for (let k = 0; k < 30 && matches(look, t.clues); k++) look = randomLook(); });
+      if (kind === "window" && look.acc === "briefcase") look.acc = "none";
+      people.push(makePerson(kind, look, pos));
+    }
+    M = { c, people, targets, time: c.time, ammo: val("mag"), shots: 0, scoped: false, aim: { x: W / 2, y: 600 }, swayT: rnd(0, 10), breath: val("breath"), holding: false,
+      tired: 0, bullets: [], puffs: [], alarm: false, alarmBefore: false, kick: 0, over: false, startedAt: performance.now(), elapsed: 0, thermal: false,
+      lamps: [80, 330, 670, 920], lit: WINDOW_FLOORS.flatMap((f) => WIN_X.map((x, w) => [f + ":" + w, c.scene === "day" ? false : Math.random() < 0.7])) };
+    M.lit = Object.fromEntries(M.lit);
+    targets.forEach((t) => { if (t.kind === "window") M.lit[t.floor + ":" + WIN_X.indexOf(t.wx)] = true; });
+    people.forEach((p) => { if (p.kind === "window") M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] = M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] || Math.random() < 0.8; });
+    show("game");
+    buildBrief();
+    setScoped(false);
+    $("thermalBtn").hidden = !val("thermal");
+    $("distText").textContent = c.dist + " m";
+    $("windBox").innerHTML = "";
+    $("windBox").append("💨 ", el("b", null, c.wind ? Math.abs(c.wind) + " " + (c.wind > 0 ? "→" : "←") : "calm"));
+    if (TEST) window.LS = { M, W, H, fireAt, setScoped, travel, drift, drop };
+    if (!save.seenHelp) openHelp();
+  }
+
+  function buildBrief() {
+    const b = $("brief"); b.replaceChildren();
+    if (val("dossier")) M.targets.forEach((t) => { const c = document.createElement("canvas"); c.width = 88; c.height = 108; drawPortrait(c, t.look); if (t.state === "down") c.style.opacity = ".35"; b.appendChild(c); });
+    const txt = el("div", "txt");
+    M.targets.forEach((t, i) => {
+      txt.appendChild(el("b", null, M.targets.length > 1 ? "Target " + (i + 1) : "Target"));
+      txt.appendChild(el("span", t.state === "down" ? "done" : "", t.clues.map((c) => c.t).join(" · ")));
+      txt.appendChild(document.createElement("br"));
+    });
+    b.appendChild(txt);
+  }
+  function drawPortrait(c, look) {
+    const g = c.getContext("2d"); g.fillStyle = "#22302a"; g.fillRect(0, 0, c.width, c.height);
+    g.save(); g.translate(c.width / 2, c.height + 40); g.scale(2, 2); drawBody(g, 0, 0, look, 1, 0, false); g.restore();
+  }
+
+  // ---------- ballistics
+  const travel = () => M.c.dist / (850 * val("rifle"));
+  const drift = () => M.c.wind * travel() * 9;   // world units sideways
+  const drop = () => 36 * travel() * travel();    // world units down
+
+  function setScoped(on) {
+    if (!M) return;
+    M.scoped = on;
+    $("ctrlL").hidden = !on; $("ctrlR").hidden = !on;
+    $("hint").textContent = on ? (M.shots === 0 ? "Drag to aim · Hold breath to steady · Tap Fire" : "") : "Tap anywhere to look through the scope";
+    $("hint").hidden = on && M.shots > 0;
+    if (!on) M.holding = false;
+  }
+  function toast(text, color) {
+    const t = el("div", "toast", text); t.style.color = color || "#fff"; $("toasts").appendChild(t); setTimeout(() => t.remove(), 950);
+  }
+
+  // ---------- input
+  let drag = null;
+  cv.addEventListener("pointerdown", (e) => {
+    if (!M || M.over) return;
+    audio();
+    if (!M.scoped) {
+      const s = baseScale(), ox = (sw - W * s) / 2, oy = (sh - H * s) / 2;
+      M.aim.x = clamp((e.clientX - ox) / s, 0, W); M.aim.y = clamp((e.clientY - oy) / s, 0, H);
+      setScoped(true);
+      return;
+    }
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    $("hint").hidden = true;
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  cv.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id || !M || !M.scoped) return;
+    const S = baseScale() * val("scope");
+    M.aim.x = clamp(M.aim.x + (e.clientX - drag.x) / S * 0.9, 0, W);
+    M.aim.y = clamp(M.aim.y + (e.clientY - drag.y) / S * 0.9, 0, H);
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  const endDrag = (e) => { if (drag && e.pointerId === drag.id) drag = null; };
+  cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+  cv.addEventListener("wheel", (e) => { if (M && M.scoped) { M.aim.y = clamp(M.aim.y + e.deltaY * 0.3, 0, H); M.aim.x = clamp(M.aim.x + e.deltaX * 0.3, 0, W); e.preventDefault(); } }, { passive: false });
+  const holdOn = (e) => { e.preventDefault(); if (M && M.tired <= 0) M.holding = true; $("breathBtn").classList.add("on"); };
+  const holdOff = () => { if (M) M.holding = false; $("breathBtn").classList.remove("on"); };
+  $("breathBtn").addEventListener("pointerdown", holdOn);
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => $("breathBtn").addEventListener(ev, holdOff));
+  $("fireBtn").addEventListener("pointerdown", (e) => { e.preventDefault(); fire(); });
+  $("unscopeBtn").onclick = () => setScoped(false);
+  $("thermalBtn").onclick = () => { M.thermal = !M.thermal; $("thermalBtn").classList.toggle("on", M.thermal); };
+  window.addEventListener("keydown", (e) => {
+    if (!M || $("game").hidden || M.over) return;
+    if (e.code === "Space") { e.preventDefault(); if (!e.repeat && M.tired <= 0) M.holding = true; }
+    else if (e.key === "f" || e.key === "Enter") { e.preventDefault(); if (!M.scoped) setScoped(true); else fire(); }
+    else if (e.key === "Escape") setScoped(false);
+    else if (e.key === "t" && val("thermal")) $("thermalBtn").click();
+    else if (M.scoped && e.key.startsWith("Arrow")) { const d = 14; if (e.key === "ArrowLeft") M.aim.x -= d; if (e.key === "ArrowRight") M.aim.x += d; if (e.key === "ArrowUp") M.aim.y -= d; if (e.key === "ArrowDown") M.aim.y += d; }
+  });
+  window.addEventListener("keyup", (e) => { if (e.code === "Space" && M) M.holding = false; });
+
+  // ---------- shooting
+  function swayOffset() {
+    const amp = 9 * val("stab") * (M.holding ? 0.12 : 1) * (M.tired > 0 ? 1.8 : 1);
+    const t = M.swayT;
+    return { x: amp * (Math.sin(t * 1.3) * 0.8 + Math.sin(t * 2.9 + 1) * 0.35), y: amp * (Math.sin(t * 1.7 + 2) * 0.6 + Math.sin(t * 3.7) * 0.3) };
+  }
+  function fire() {
+    if (!M || M.over || !M.scoped) return;
+    if (M.ammo <= 0) { sfx.click(); toast("Out of ammo", "#ff5a52"); return; }
+    const sw0 = swayOffset();
+    fireAt(M.aim.x + sw0.x, M.aim.y + sw0.y);
+  }
+  function fireAt(ax, ay) {
+    M.ammo--; M.shots++;
+    M.kick = 1; sfx.shot(); buzz(40);
+    M.bullets.push({ t: travel(), x: ax + drift(), y: ay + drop() });
+    $("hint").hidden = true;
+  }
+  function impact(b) {
+    // Front-most first: street, then roof, balconies, windows.
+    const order = M.people.filter((p) => p.state !== "down" && p.state !== "gone" && p.alpha > 0.3).sort((a, b2) => layer(b2) - layer(a) || b2.y - a.y);
+    const hit = order.find((p) => hits(p, b.x, b.y));
+    M.puffs.push({ x: b.x, y: b.y, t: 0, hit: !!hit });
+    if (hit) {
+      hit.state = "down"; hit.fall = 0;
+      if (hit.target) {
+        sfx.hit(); buzz([20, 30, 20]); toast("Target down", "#6cf08f"); buildBrief();
+        if (M.targets.every((t) => t.state === "down")) return endMission(true);
+        raiseAlarm(b, val("silencer") ? 260 : Infinity);   // everyone hears an unsilenced rifle
+      } else {
+        return endMission(false, "You hit a bystander", "The agency doesn't tolerate mistakes. The contract has been cancelled.");
+      }
+    } else {
+      toast("Missed", "#ffbf3c");
+      raiseAlarm(b, val("silencer") ? 220 : Infinity);
+    }
+    if (M.ammo <= 0 && M.bullets.length === 0) setTimeout(() => { if (M && !M.over) endMission(false, "Out of ammo", "Your targets got away while you reloaded."); }, 900);
+  }
+  const layer = (p) => ({ street: 4, roof: 3, balcony: 2, window: 1 }[p.kind]);
+  function hits(p, x, y) {
+    if (p.kind === "window") { if (x < p.wx || x > p.wx + WIN_W || y < p.wy || y > p.wy + WIN_H - 4) return false; }
+    if (p.kind === "balcony" && y > p.y - 16) return false;   // the railing takes it
+    const hx = p.x, hy = p.y - 44;
+    if ((x - hx) * (x - hx) + (y - hy) * (y - hy) <= 8 * 8) return true;
+    return x >= p.x - 9 && x <= p.x + 9 && y >= p.y - 37 && y <= p.y;
+  }
+  function raiseAlarm(at, radius) {
+    if (!M || M.over) return;
+    M.people.forEach((p) => {
+      if (p.state === "down" || p.state === "gone" || p.state === "flee") return;
+      if (at && Math.hypot(p.x - at.x, (p.y - 20) - at.y) > radius) return;
+      p.state = "flee"; p.react = rnd(0.2, 0.9) + (p.target ? 0.3 : 0);
+      if (p.kind === "street") { p.exitX = p.x < W / 2 ? (Math.abs(p.x - DOOR_X) < 220 && Math.random() < 0.5 ? DOOR_X : -60) : (Math.abs(p.x - DOOR_X) < 220 && Math.random() < 0.5 ? DOOR_X : W + 60); }
+      if (p.kind === "window") p.exitX = p.x;
+    });
+    if (M.targets.some((t) => t.state === "flee") && !M.alarm) { M.alarm = true; toast("They've spotted you!", "#ff5a52"); }
+  }
+
+  // ---------- update
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (M && !$("game").hidden) { if (!M.over && $("overlay").hidden) update(dt); draw(); }
+    requestAnimationFrame(frame);
+  }
+  function update(dt) {
+    M.elapsed += dt;
+    M.time -= dt; M.swayT += dt * (M.holding ? 0.5 : 1);
+    M.kick = Math.max(0, M.kick - dt * 4);
+    if (M.holding) { M.breath -= dt; if (M.breath <= 0) { M.holding = false; M.tired = 2; $("breathBtn").classList.remove("on"); } }
+    else M.breath = Math.min(val("breath"), M.breath + dt * 0.6);
+    if (M.tired > 0) M.tired -= dt;
+    $("breathMeter").style.height = (M.breath / val("breath") * 100) + "%";
+    const tl = Math.max(0, Math.ceil(M.time));
+    $("timeText").textContent = Math.floor(tl / 60) + ":" + String(tl % 60).padStart(2, "0");
+    $("timeBox").classList.toggle("low", tl <= 10);
+    $("ammoText").textContent = M.ammo + " / " + val("mag");
+    if (M.time <= 0) return endMission(false, "Out of time", "Your target left the area. The client isn't happy.");
+
+    M.bullets.forEach((b) => { b.t -= dt; });
+    const landed = M.bullets.filter((b) => b.t <= 0); M.bullets = M.bullets.filter((b) => b.t > 0);
+    for (const b of landed) { impact(b); if (M.over) return; }
+    M.puffs.forEach((p) => { p.t += dt; }); M.puffs = M.puffs.filter((p) => p.t < 0.8);
+
+    for (const p of M.people) {
+      p.t += dt;
+      if (p.state === "down") { p.fall = Math.min(1, (p.fall || 0) + dt * 3); continue; }
+      if (p.state === "gone") continue;
+      if (p.state === "flee") {
+        p.react -= dt; if (p.react > 0) continue;
+        const sp = p.kind === "window" ? 0 : 95;
+        if (p.kind === "window") { p.alpha -= dt * 1.6; if (p.alpha <= 0) gone(p); continue; }
+        const tx = p.exitX != null ? p.exitX : p.x;
+        p.dir = tx < p.x ? -1 : 1; p.walk += dt * 14;
+        p.x += p.dir * sp * dt;
+        if (Math.abs(p.x - tx) < 4 || p.x < -50 || p.x > W + 50) gone(p);
+        continue;
+      }
+      if (p.kind === "street") {
+        p.walk += dt * 7; p.x += p.dir * p.speed * dt;
+        if (p.target) { if (p.x < 60 || p.x > W - 60 || Math.random() < dt * 0.08) p.dir = p.x < 60 ? 1 : p.x > W - 60 ? -1 : -p.dir; }
+        else if (p.x < -40 || p.x > W + 40) { p.dir = -p.dir; p.look = randomLook(); M.targets.forEach((t) => { for (let k = 0; k < 30 && matches(p.look, t.clues); k++) p.look = randomLook(); }); }
+      } else {
+        // Wander back and forth, with pauses.
+        if (p.pause > 0) { p.pause -= dt; continue; }
+        p.walk += dt * 6; p.x += p.dir * p.speed * 0.6 * dt;
+        if (p.x < p.min || p.x > p.max) { p.dir = p.x < p.min ? 1 : -1; p.x = clamp(p.x, p.min, p.max); }
+        if (Math.random() < dt * 0.4) p.pause = rnd(0.8, 3);
+        if (Math.random() < dt * 0.15) p.dir = -p.dir;
+      }
+    }
+  }
+  function gone(p) {
+    p.state = "gone";
+    if (p.target) endMission(false, "Target escaped", "Your target got away. They'll be much harder to find now.");
+  }
+
+  // ---------- drawing
+  const SCENES = {
+    day: { sky: ["#8fd0f7", "#e3f4ff"], bld: "#c8b59a", bld2: "#b3a083", win: "#7fa3bf", winIn: "#3c4a5a", street: "#9a9a96", road: "#4b4e52", dark: 0 },
+    dusk: { sky: ["#f2955d", "#5d4a86"], bld: "#9c7d68", bld2: "#86695a", win: "#5a5f7a", winIn: "#ffcf8a", street: "#7a7470", road: "#3c3c42", dark: 0.25 },
+    night: { sky: ["#070d22", "#1b2550"], bld: "#3b3f55", bld2: "#30344a", win: "#1c2133", winIn: "#ffcf70", street: "#3e4048", road: "#24262c", dark: 0.6 },
+  };
+  function draw() {
+    const g = ctx, sc = SCENES[M.c.scene];
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = "#000"; g.fillRect(0, 0, sw, sh);
+    const s0 = baseScale();
+    if (!M.scoped) {
+      const ox = (sw - W * s0) / 2, oy = (sh - H * s0) / 2;
+      g.setTransform(dpr * s0, 0, 0, dpr * s0, dpr * ox, dpr * oy);
+      drawWorld(g, sc, false, -ox / s0, (sw - ox) / s0);
+      return;
+    }
+    const zoom = val("scope"), S = s0 * zoom, sway = swayOffset();
+    const vx = M.aim.x + sway.x, vy = M.aim.y + sway.y - M.kick * 22 / zoom * 3;
+    const cx = sw / 2, cy = sh / 2, R = Math.min(sw, sh) * 0.47;
+    g.save();
+    g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
+    g.setTransform(dpr * S, 0, 0, dpr * S, dpr * (cx - vx * S), dpr * (cy - vy * S));
+    drawWorld(g, sc, M.thermal, vx - R / S, vx + R / S);
+    g.restore();
+    // Scope housing and reticle.
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const grd = g.createRadialGradient(cx, cy, R * 0.75, cx, cy, R);
+    grd.addColorStop(0, "rgba(0,0,0,0)"); grd.addColorStop(1, "rgba(0,0,0,.65)");
+    g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = "#050505"; g.lineWidth = 8; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = "rgba(0,0,0,.85)"; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(cx - R, cy); g.lineTo(cx - 10, cy); g.moveTo(cx + 10, cy); g.lineTo(cx + R, cy);
+    g.moveTo(cx, cy - R); g.lineTo(cx, cy - 10); g.moveTo(cx, cy + 10); g.lineTo(cx, cy + R); g.stroke();
+    // A mark every 5 world units, to help with wind, drop and leading.
+    g.fillStyle = "rgba(0,0,0,.85)";
+    for (let k = 1; k <= 8; k++) {
+      const d = k * 5 * S, big = k % 2 === 0;
+      if (d > R - 6) break;
+      g.fillRect(cx + d - 1, cy - (big ? 6 : 3), 2, big ? 12 : 6); g.fillRect(cx - d - 1, cy - (big ? 6 : 3), 2, big ? 12 : 6);
+      g.fillRect(cx - (big ? 6 : 3), cy + d - 1, big ? 12 : 6, 2); g.fillRect(cx - (big ? 6 : 3), cy - d - 1, big ? 12 : 6, 2);
+    }
+    g.fillStyle = "#ff3b30"; g.beginPath(); g.arc(cx, cy, 2.2, 0, Math.PI * 2); g.fill();
+    if (val("ballistic")) {
+      g.strokeStyle = "#ffbf3c"; g.lineWidth = 2;
+      g.beginPath(); g.arc(cx + drift() * S, cy + drop() * S, 5, 0, Math.PI * 2); g.stroke();
+    }
+    if (val("facial")) {
+      const who = M.people.filter((p) => p.state !== "gone" && p.state !== "down" && p.alpha > 0.3).sort((a, b) => layer(b) - layer(a)).find((p) => hits(p, vx, vy) || hits(p, vx, vy + 20));
+      if (who) {
+        g.font = "800 13px " + getComputedStyle(document.body).fontFamily;
+        g.textAlign = "center"; g.fillStyle = who.target ? "#6cf08f" : "#ff5a52";
+        g.fillText(who.target ? "✔ TARGET" : "✖ BYSTANDER", cx, cy - 26);
+      }
+    }
+  }
+
+  function drawWorld(g, sc, thermal, xL, xR) {
+    // Sky
+    const sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, thermal ? "#050a1c" : sc.sky[0]); sky.addColorStop(1, thermal ? "#0b1530" : sc.sky[1]);
+    g.fillStyle = sky; g.fillRect(xL - 10, -400, xR - xL + 20, H + 800);
+    // Neighbouring buildings (scenery only).
+    for (let x = Math.floor((xL - 200) / 200) * 200; x < xR + 200; x += 200) {
+      if (x + 200 > BLD_L - 40 && x < BLD_R + 40) continue;
+      const top = 300 + ((x / 200) % 3 + 3) % 3 * 120;
+      g.fillStyle = thermal ? "#0e1730" : sc.bld2; g.fillRect(x, top, 190, H - top);
+      g.fillStyle = thermal ? "#121c38" : sc.win;
+      for (let y = top + 30; y < 1150; y += 90) for (let wx = x + 20; wx < x + 180; wx += 55) g.fillRect(wx, y, 34, 50);
+    }
+    // Main building
+    g.fillStyle = thermal ? "#101a36" : sc.bld; g.fillRect(BLD_L, ROOF, BLD_R - BLD_L, 1180 - ROOF);
+    g.fillStyle = thermal ? "#0c142a" : sc.bld2; g.fillRect(BLD_L - 10, ROOF - 12, BLD_R - BLD_L + 20, 14);
+    // roof hut
+    g.fillRect(760, ROOF - 48, 70, 40);
+    g.fillStyle = thermal ? "#0a1020" : "#2b2b2b"; g.fillRect(782, ROOF - 40, 26, 32);
+    // floors
+    for (let f = 0; f < 6; f++) {
+      const y = floorTop(f);
+      g.fillStyle = thermal ? "#0c142a" : sc.bld2; g.fillRect(BLD_L, y + FLOOR_H - 6, BLD_R - BLD_L, 6);
+      if (WINDOW_FLOORS.includes(f)) WIN_X.forEach((x, w) => {
+        const lit = M.lit[f + ":" + w];
+        g.fillStyle = thermal ? "#0a1124" : lit ? sc.winIn : sc.win; g.fillRect(x, y + 25, WIN_W, WIN_H);
+      });
+      else { g.fillStyle = thermal ? "#0a1124" : sc.win; for (let x = 150; x < 850; x += 140) g.fillRect(x, y + 20, 110, FLOOR_H - 34); }
+    }
+    // Ground floor shops and the door
+    g.fillStyle = thermal ? "#0a1124" : sc.win; g.fillRect(150, 1080, 280, 90); g.fillRect(570, 1080, 280, 90);
+    g.fillStyle = thermal ? "#08101f" : "#3a2a20"; g.fillRect(DOOR_X - 32, 1070, 64, 110);
+    // People: windows, balconies, roof, street (back to front)
+    const visible = (p) => p.state !== "gone" && p.x > xL - 30 && p.x < xR + 30;
+    M.people.filter((p) => p.kind === "window" && visible(p)).forEach((p) => {
+      g.save(); g.beginPath(); g.rect(p.wx, p.wy, WIN_W, WIN_H); g.clip(); drawPerson(g, p, sc, thermal, true); g.restore();
+    });
+    // window frames and sills
+    for (const f of WINDOW_FLOORS) WIN_X.forEach((x) => {
+      const y = floorTop(f) + 25;
+      g.strokeStyle = thermal ? "#18234a" : "rgba(255,255,255,.55)"; g.lineWidth = 4; g.strokeRect(x, y, WIN_W, WIN_H);
+      g.beginPath(); g.moveTo(x + WIN_W / 2, y); g.lineTo(x + WIN_W / 2, y + WIN_H * 0.45); g.stroke();
+      g.fillStyle = thermal ? "#18234a" : sc.bld2; g.fillRect(x - 8, y + WIN_H - 4, WIN_W + 16, 10);
+    });
+    for (const f of BALCONY_FLOORS) {
+      M.people.filter((p) => p.kind === "balcony" && p.floor === f && visible(p)).forEach((p) => drawPerson(g, p, sc, thermal));
+      const y = balconyY(f);
+      g.fillStyle = thermal ? "#18234a" : "#5b5f66"; g.fillRect(BLD_L - 20, y, BLD_R - BLD_L + 40, 10);
+      g.strokeStyle = thermal ? "#18234a" : "#2b2e33"; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(BLD_L - 20, y - 18); g.lineTo(BLD_R + 20, y - 18);
+      for (let x = BLD_L - 20; x <= BLD_R + 20; x += 18) { g.moveTo(x, y - 18); g.lineTo(x, y); }
+      g.stroke();
+    }
+    M.people.filter((p) => p.kind === "roof" && visible(p)).forEach((p) => drawPerson(g, p, sc, thermal));
+    // Street
+    g.fillStyle = thermal ? "#0c142a" : sc.street; g.fillRect(xL - 10, 1180, xR - xL + 20, 70);
+    g.fillStyle = thermal ? "#08101f" : sc.road; g.fillRect(xL - 10, 1250, xR - xL + 20, 900);
+    g.fillStyle = thermal ? "#0c142a" : "#e8e2c8";
+    for (let x = Math.floor(xL / 80) * 80; x < xR; x += 80) g.fillRect(x, 1285, 40, 5);
+    // Lamps
+    M.lamps.forEach((x) => {
+      g.fillStyle = thermal ? "#18234a" : "#2b2e33"; g.fillRect(x - 3, 1100, 6, 100);
+      g.fillStyle = thermal ? "#18234a" : sc.dark ? "#ffe9a8" : "#d8d8d8"; g.fillRect(x - 10, 1094, 20, 8);
+      if (sc.dark && !thermal) { const lg = g.createRadialGradient(x, 1150, 5, x, 1150, 110); lg.addColorStop(0, "rgba(255,225,150,.35)"); lg.addColorStop(1, "rgba(255,225,150,0)"); g.fillStyle = lg; g.fillRect(x - 110, 1040, 220, 220); }
+    });
+    M.people.filter((p) => p.kind === "street" && visible(p)).sort((a, b) => a.y - b.y).forEach((p) => drawPerson(g, p, sc, thermal));
+    // Night darkness everywhere except lit windows and lamps.
+    if (sc.dark && !thermal) {
+      g.fillStyle = "rgba(4,6,18," + sc.dark * 0.55 + ")"; g.fillRect(xL - 10, -400, xR - xL + 20, H + 800);
+    }
+    // Bullet puffs
+    M.puffs.forEach((p) => {
+      g.globalAlpha = 1 - p.t / 0.8; g.fillStyle = p.hit ? "#ffffff" : "#d9d2c4";
+      g.beginPath(); g.arc(p.x, p.y, 4 + p.t * 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+    });
+  }
+
+  function lightAt(p, sc) {
+    if (!sc.dark) return 1;
+    if (p.kind === "window") return M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] ? 1 : 0.35;
+    if (p.kind === "street") { const d = Math.min(...M.lamps.map((x) => Math.abs(x - p.x))); return d < 90 ? 1 : 0.5; }
+    return 0.55;
+  }
+  function drawPerson(g, p, sc, thermal) {
+    g.save();
+    g.globalAlpha = p.alpha;
+    if (p.state === "down") {
+      // Slumps over and fades: no gore.
+      g.translate(p.x, p.y); g.rotate(p.fall * Math.PI / 2 * (p.dir || 1)); g.translate(-p.x, -p.y); g.globalAlpha = 1 - p.fall * 0.45;
+    }
+    if (thermal) {
+      const tg = g.createRadialGradient(p.x, p.y - 26, 2, p.x, p.y - 26, 30);
+      tg.addColorStop(0, "#ffffe0"); tg.addColorStop(0.35, "#ffb02e"); tg.addColorStop(1, "rgba(220,40,40,0)");
+      g.fillStyle = tg; g.beginPath(); g.ellipse(p.x, p.y - 24, 13, 26, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(p.x, p.y - 44, 8, 0, Math.PI * 2); g.fillStyle = "#fff6c8"; g.fill();
+    } else {
+      drawBody(g, p.x, p.y, p.look, lightAt(p, sc), p.state === "idle" && p.pause > 0 ? 0 : p.walk, p.state === "flee");
+    }
+    g.restore();
+  }
+  function shade(hex, k) {
+    if (k >= 1) return hex;
+    const n = parseInt(hex.slice(1), 16), r = (n >> 16) * k, gg = ((n >> 8) & 255) * k, b = (n & 255) * k;
+    return "rgb(" + (r | 0) + "," + (gg | 0) + "," + (b | 0) + ")";
+  }
+  function drawBody(g, x, y, look, light, walk, flee) {
+    const L = (c) => shade(c, light), sw2 = Math.sin(walk) * (flee ? 6 : 3.5);
+    // legs
+    g.fillStyle = L(look.legs);
+    g.fillRect(x - 6 + sw2 * 0.4, y - 18, 5, 18); g.fillRect(x + 1 - sw2 * 0.4, y - 18, 5, 18);
+    // body
+    g.fillStyle = L(COLS[look.top]);
+    g.beginPath(); g.roundRect ? g.roundRect(x - 9, y - 37, 18, 21, 4) : g.rect(x - 9, y - 37, 18, 21); g.fill();
+    // arms
+    g.strokeStyle = L(COLS[look.top]); g.lineWidth = 4.5; g.lineCap = "round";
+    g.beginPath(); g.moveTo(x - 8, y - 34); g.lineTo(x - 10 - sw2 * 0.3, y - 20 + (flee ? -8 : 0)); g.moveTo(x + 8, y - 34); g.lineTo(x + 10 + sw2 * 0.3, y - 20 + (flee ? -8 : 0)); g.stroke();
+    if (look.acc === "briefcase") { g.fillStyle = L("#4a2f1b"); g.fillRect(x + 8 + sw2 * 0.3, y - 21, 10, 8); }
+    // head
+    g.fillStyle = L(look.skin); g.beginPath(); g.arc(x, y - 44, 7, 0, Math.PI * 2); g.fill();
+    // hair
+    g.fillStyle = L(HAIRS[look.hair]); g.beginPath(); g.arc(x, y - 46, 7.2, Math.PI * 1.02, Math.PI * 1.98); g.fill();
+    g.fillRect(x - 7, y - 47, 2.5, 5); g.fillRect(x + 4.5, y - 47, 2.5, 5);
+    if (look.acc === "glasses") { g.fillStyle = L("#0b0b0b"); g.fillRect(x - 6, y - 46, 12, 3.4); }
+    // hat
+    if (look.hat !== "none") {
+      g.fillStyle = L(COLS[look.hatC]);
+      if (look.hat === "cap") { g.beginPath(); g.arc(x, y - 47, 7.6, Math.PI, 0); g.fill(); g.fillRect(x - 1, y - 48.5, 11, 2.6); }
+      else if (look.hat === "fedora") { g.fillRect(x - 11, y - 50, 22, 2.8); g.fillRect(x - 6.5, y - 57, 13, 7.5); }
+      else { g.beginPath(); g.arc(x, y - 47, 7.8, Math.PI, 0); g.fill(); g.fillRect(x - 7.8, y - 48, 15.6, 3); }
+    }
+  }
+
+  // ---------- endings
+  function endMission(ok, title, text) {
+    if (M.over) return;
+    M.over = true; M.holding = false;
+    $("ctrlL").hidden = true; $("ctrlR").hidden = true; $("hint").hidden = true;
+    const c = M.c;
+    setTimeout(() => {
+      if (ok) {
+        const oneShot = M.shots === c.n, quiet = !M.alarm, fast = M.elapsed < c.time / 2;
+        const rows = [["Contract fee", c.pay]];
+        if (oneShot) rows.push(["One shot per target +25%", Math.round(c.pay * 0.25)]);
+        if (quiet) rows.push(["Nobody spotted you +15%", Math.round(c.pay * 0.15)]);
+        if (fast) rows.push(["Fast work +10%", Math.round(c.pay * 0.1)]);
+        const total = rows.reduce((t, r) => t + r[1], 0);
+        const rep = c.rep + (oneShot ? Math.ceil(c.rep * 0.3) : 0);
+        const oldRank = rankIndex(save.rep);
+        save.cash += total; save.rep += rep; save.done++;
+        save.board = save.board.filter((x) => x.id !== c.id);
+        if (save.board.length < 3) { const L = rankIndex(save.rep); save.board.push(genContract(L + pick([-1, 0, 0, 1]), Math.random() < 0.35)); }
+        const newBest = save.rep > save.best; if (newBest) save.best = save.rep;
+        persist(); sfx.win(); buzz([20, 40, 20, 40, 60]);
+        const ranked = rankIndex(save.rep) > oldRank;
+        openOverlay((p) => {
+          p.appendChild(el("h2", "ok", "Contract complete"));
+          p.appendChild(el("p", null, "Operation " + c.code + " is done. The payment has landed."));
+          const r = el("div", "rows");
+          rows.forEach(([a, b]) => { const d = el("div"); d.append(el("span", null, a), el("span", null, fmt$(b))); r.appendChild(d); });
+          const t = el("div", "total"); t.append(el("span", null, "Total"), el("span", null, fmt$(total))); r.appendChild(t);
+          const rp = el("div"); rp.append(el("span", null, "Reputation"), el("span", null, "+" + rep + " (" + save.rep + ")")); r.appendChild(rp);
+          p.appendChild(r);
+          if (ranked) p.appendChild(el("p", null, "🎖️ Promoted to " + RANKS[rankIndex(save.rep)][1] + "! Bigger contracts are on the board."));
+          const b = el("button", "btn wide", "Back to the safehouse"); b.type = "button"; b.onclick = () => { closeOverlay(); M = null; renderHub(); };
+          p.appendChild(b);
+        });
+        // When played inside HhGames, offer the reputation for its leaderboard.
+        if (newBest) { try { if (window.parent !== window) window.parent.postMessage({ type: "hh-score", game: "long-shot", score: save.rep }, "*"); } catch (e) {} }
+      } else {
+        save.failed++; save.rep = Math.max(0, save.rep - 3); persist(); sfx.fail(); buzz([60, 40, 60]);
+        openOverlay((p) => {
+          p.appendChild(el("h2", "bad", title));
+          p.appendChild(el("p", null, text + " You lose 3 reputation."));
+          const again = el("button", "btn wide", "Try again"); again.type = "button"; again.onclick = () => { closeOverlay(); startMission(c); };
+          const back = el("button", "btn ghost wide", "Back to the safehouse"); back.type = "button"; back.style.marginTop = "10px"; back.onclick = () => { closeOverlay(); M = null; renderHub(); };
+          p.append(again, back);
+        });
+      }
+    }, ok ? 1100 : 700);
+  }
+
+  resize();
+  requestAnimationFrame(frame);
+  show("title");
+})();
+</script>
+</body>
+</html>
