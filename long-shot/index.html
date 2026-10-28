@@ -217,19 +217,19 @@ h1.logo span { color: var(--green); }
   function rankIndex(rep) { let i = 0; RANKS.forEach((r, k) => { if (rep >= r[0]) i = k; }); return i; }
   const UPGRADES = [
     { id: "scope", name: "Scope", icon: "🔭", desc: "More zoom, so you can pick out details from further away.", costs: [700, 1800, 4200], vals: [3, 4.2, 5.6, 7.5] },
-    { id: "stab", name: "Stabiliser", icon: "🎯", desc: "Less sway when you aim.", costs: [600, 1500, 3600], vals: [1, 0.72, 0.5, 0.32] },
-    { id: "breath", name: "Breath control", icon: "🫁", desc: "Hold your breath for longer.", costs: [500, 1300, 3000], vals: [2.2, 3.5, 5, 7] },
-    { id: "rifle", name: "Rifle", icon: "⚡", desc: "Faster bullets: less drop, less drift, less leading.", costs: [900, 2400, 5200], vals: [1, 1.35, 1.75, 2.3] },
+    { id: "stab", name: "Stabiliser", icon: "🎯", desc: "Less sway when you aim.", costs: [600, 1500, 3600], vals: [1, 0.74, 0.54, 0.36] },
+    { id: "breath", name: "Breath control", icon: "🫁", desc: "Hold your breath for longer.", costs: [500, 1300, 3000], vals: [1.8, 3, 4.5, 6.5] },
+    { id: "rifle", name: "Rifle", icon: "⚡", desc: "Faster bullets: less drop, less drift, less leading.", costs: [900, 2400, 5200], vals: [1, 1.3, 1.65, 2.1] },
     { id: "mag", name: "Magazine", icon: "🧰", desc: "More shots per contract.", costs: [400, 1100, 2600], vals: [3, 4, 5, 6] },
     { id: "silencer", name: "Silencer", icon: "🤫", desc: "Only people near the shot hear it, so the crowd doesn't panic.", costs: [1800], vals: [0, 1] },
-    { id: "dossier", name: "Dossier photos", icon: "🗂️", desc: "A photo of every target in your briefing.", costs: [1200], vals: [0, 1] },
+    { id: "dossier", name: "Dossier photos", icon: "🗂️", desc: "A photo of every target in your briefing.", costs: [1500], vals: [0, 1] },
     { id: "thermal", name: "Thermal scope", icon: "🌡️", desc: "See people glowing in the dark. Great for night contracts.", costs: [2800], vals: [0, 1] },
     { id: "ballistic", name: "Ballistics computer", icon: "🧮", desc: "Shows where the bullet will land after wind and drop.", costs: [4500], vals: [0, 1] },
-    { id: "facial", name: "Target recognition", icon: "🧠", desc: "Tells you if the person in your crosshair is a target.", costs: [6000], vals: [0, 1] },
+    { id: "facial", name: "Target recognition", icon: "🧠", desc: "Tells you if the person in your crosshair is a target.", costs: [7000], vals: [0, 1] },
   ];
   const UP = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
   const lvl = (id) => save.up[id] || 0;
-  const val = (id) => UP[id].vals[lvl(id)];
+  const val = (id) => UP[id].vals[Math.min(lvl(id), UP[id].vals.length - 1)];
 
   // ---------- looks
   const SKINS = ["#f1c7a1", "#d9a37b", "#b67a54", "#8a5636", "#5e3a24"];
@@ -241,7 +241,7 @@ h1.logo span { color: var(--green); }
     return { skin: pick(SKINS), hair: pick(Object.keys(HAIRS)), hat: Math.random() < 0.55 ? "none" : pick(HATS.slice(1)), hatC: pick(Object.keys(COLS)),
       top: pick(Object.keys(COLS)), legs: pick(["#2b2f3a", "#3b3226", "#22252a", "#4a5568", "#1f3b63"]), acc: Math.random() < 0.65 ? "none" : pick(["briefcase", "glasses"]) };
   }
-  // Clues: three facts that only the target matches.
+  // Clues: facts that only the target matches.
   function clueList(look, kind) {
     const c = [];
     c.push(look.hat === "none" ? { k: "hat", v: "none", t: "no hat" } : { k: "hat", v: look.hat + look.hatC, t: look.hatC + " " + HAT_NAMES[look.hat] });
@@ -255,31 +255,101 @@ h1.logo span { color: var(--green); }
     return clues.every((c) => c.k === "hat" ? (look.hat === "none" ? "none" : look.hat + look.hatC) === c.v : c.k === "acc" ? look.acc === c.v : look[c.k] === c.v);
   }
 
+  // ---------- the three locations
+  const W = 1000, H = 1380;
+  const ROOF = 170, FLOOR_H = 150, BLD_L = 120, BLD_R = 880, DOOR_X = 500;
+  const floorTop = (i) => ROOF + i * FLOOR_H;
+  const balconyY = (i) => floorTop(i) + FLOOR_H - 8;
+  const CITY_WIN = [];
+  [0, 2, 4, 5].forEach((f) => [160, 335, 510, 685].forEach((x) => CITY_WIN.push({ x, y: floorTop(f) + 25, w: 115, h: 100 })));
+  // Spots are where people can be. mode: cross (walk across and away), wander (pace about), sit. layer: higher is nearer to you.
+  const MAPS = {
+    city: {
+      name: "City", icon: "🏙️", places: ["Kingsway Street", "Market Square", "The Old Exchange", "Union Street"],
+      windows: CITY_WIN, lamps: [80, 330, 670, 920], lampY: 1150, roads: [1300, 1360],
+      spots: {
+        roof: { y: ROOF, min: 190, max: 740, exits: [790], layer: 2, mode: "wander", w: 0.08 },
+        bal1: { y: balconyY(1), min: 170, max: 830, exits: [160], layer: 2, rail: 16, mode: "wander", w: 0.09 },
+        bal3: { y: balconyY(3), min: 170, max: 830, exits: [840], layer: 2, rail: 16, mode: "wander", w: 0.09 },
+        st0: { y: 1212, min: -60, max: W + 60, exits: [-60, DOOR_X, W + 60], layer: 4, mode: "cross", w: 0.22 },
+        st1: { y: 1236, min: -60, max: W + 60, exits: [-60, DOOR_X, W + 60], layer: 4.1, mode: "cross", w: 0.22 },
+      },
+      winW: 0.3, vip: "st1", covers: [{ x: 660, y: 1138, w: 52, h: 74, layer: 4.05 }],
+    },
+    harbour: {
+      name: "Harbour", icon: "⚓", places: ["Dockside", "Old Harbour", "Pier 9", "The Container Port"],
+      windows: [655, 725, 795].map((x) => ({ x, y: 430, w: 55, h: 55 })), lamps: [80, 360, 640, 920], lampY: 1040, roads: [1180, 1240],
+      spots: {
+        bridge: { y: 400, min: 655, max: 845, exits: [], layer: 2, rail: 10, mode: "wander", w: 0.06 },
+        deck: { y: 600, min: 95, max: 620, exits: [95], layer: 2.5, rail: 14, mode: "wander", w: 0.18 },
+        contA: { y: 860, min: 135, max: 325, exits: [], layer: 3, mode: "wander", w: 0.08 },
+        contB: { y: 860, min: 655, max: 865, exits: [], layer: 3, mode: "wander", w: 0.08 },
+        q0: { y: 1045, min: -60, max: W + 60, exits: [-60, W + 60], layer: 4, mode: "cross", w: 0.24 },
+        q1: { y: 1085, min: -60, max: W + 60, exits: [-60, W + 60], layer: 4.1, mode: "cross", w: 0.24 },
+      },
+      winW: 0.08, vip: "q1", covers: [{ x: 430, y: 1003, w: 110, h: 42, layer: 4.05 }],
+    },
+    park: {
+      name: "Park", icon: "🌳", places: ["Victoria Park", "Riverside Gardens", "The Botanic Gardens", "Queen's Park"],
+      windows: [625, 735, 845].map((x) => ({ x, y: 640, w: 85, h: 90 })), lamps: [250, 640, 900], lampY: 1140, roads: [],
+      seats: [110, 172, 690, 752, 862, 924].map((x) => ({ x, y: 1060 })),
+      spots: {
+        terrace: { y: 560, min: 625, max: 935, exits: [950], layer: 2, rail: 14, mode: "wander", w: 0.14 },
+        p0: { y: 930, min: -60, max: W + 60, exits: [-60, W + 60], layer: 4, mode: "cross", w: 0.26 },
+        sit: { y: 1060, layer: 4.2, mode: "sit", exits: [-60, W + 60], w: 0.2 },
+        p1: { y: 1200, min: -60, max: W + 60, exits: [-60, W + 60], layer: 4.4, mode: "cross", w: 0.3 },
+      },
+      winW: 0.1, vip: "p1",
+      covers: [{ x: 140, y: 860, w: 20, h: 100, layer: 4.05 }, { cx: 150, cy: 830, r: 75, layer: 4.05 },
+        { x: 410, y: 860, w: 20, h: 100, layer: 4.05 }, { cx: 420, cy: 822, r: 70, layer: 4.05 }],
+    },
+  };
+
   // ---------- contracts
-  const CODES = ["Nightjar", "Copperhead", "Blackwater", "Kestrel", "Iron Gate", "Red Lantern", "Silver Fox", "Glass Tower", "Old Harbour", "Paper Crown", "Low Tide", "Northwind", "Cold Coffee", "Stray Dog", "Last Orders"];
+  const CODES = ["Nightjar", "Copperhead", "Blackwater", "Kestrel", "Iron Gate", "Red Lantern", "Silver Fox", "Glass Tower", "Old Harbour", "Paper Crown", "Low Tide",
+    "Northwind", "Cold Coffee", "Stray Dog", "Last Orders", "Long Night", "Blue Heron", "Dead Drop", "Quiet Room", "Black Swan"];
   const VILLAINS = ["a smuggling boss", "a crooked arms dealer", "a hacker selling state secrets", "a jewel thief", "a gang enforcer", "a corrupt banker",
     "a forger flooding the city with fake cash", "a spy selling secrets", "a double agent", "a racketeer", "a cyber-criminal", "a black-market kingpin"];
-  const PLACES = { day: ["Kingsway Street", "Market Square", "The Old Exchange"], dusk: ["Harbour Row", "Riverside Plaza", "Union Street"], night: ["The Neon Strip", "Dockside", "Grand Hotel"] };
-  function genContract(L, risky) {
+  const CAR_TYPES = ["car", "van", "pickup"];
+  const CAR_COLS = { red: "#c83a2e", blue: "#2c5bc4", white: "#e8e8e8", black: "#1e1f22", green: "#2f8a4c", silver: "#a9b0b8", yellow: "#e5b92c" };
+  const TYPES = {
+    elim: { name: "Eliminate", icon: "🎯" },
+    overwatch: { name: "Overwatch", icon: "🛡️" },
+    getaway: { name: "Getaway", icon: "🚗" },
+    precision: { name: "Precision", icon: "💻" },
+  };
+  function genContract(L, risky, type) {
     L = Math.max(0, L);
-    const scene = L >= 2 && Math.random() < 0.3 ? "night" : L >= 1 && Math.random() < 0.4 ? "dusk" : "day";
-    const n = L >= 4 && Math.random() < 0.3 ? 3 : L >= 2 && Math.random() < 0.4 ? 2 : 1;
-    const dist = Math.round((180 + L * 70 + rnd(0, 140)) / 10) * 10;
-    const wind = L === 0 ? 0 : Math.round(rnd(0, 0.8 + L * 0.7) * 10) / 10 * (Math.random() < 0.5 ? -1 : 1);
-    const kinds = L === 0 ? ["window"] : L === 1 ? ["window", "balcony", "street"] : ["window", "balcony", "street", "street", "roof"];
-    const targets = Array.from({ length: n }, () => pick(kinds));
-    const time = Math.max(40, 95 - L * 6 - n * 5);
-    const crowd = Math.min(36, 14 + L * 3);
-    const pay = Math.round((450 + L * 380 + dist * 1.4 + Math.abs(wind) * 140 + (n - 1) * 700 + (scene === "night" ? 600 : 0) + targets.filter((k) => k === "street").length * 250) * rnd(0.9, 1.15) / 10) * 10;
+    const types = L === 0 ? ["elim", "elim", "overwatch"] : L === 1 ? ["elim", "elim", "overwatch", "getaway"] : ["elim", "elim", "overwatch", "getaway", "precision"];
+    type = type || (save.done === 0 ? "elim" : pick(types));
+    const map = save.done === 0 ? "city" : type === "getaway" ? pick(["city", "harbour"]) : pick(["city", "harbour", "park"]);
+    const scene = L >= 2 && Math.random() < 0.3 ? "night" : L >= 1 && Math.random() < 0.35 ? "dusk" : "day";
+    const n = type !== "elim" ? 1 : L >= 4 && Math.random() < 0.3 ? 3 : L >= 2 && Math.random() < 0.4 ? 2 : 1;
+    const attackers = type === "overwatch" ? 2 + (L >= 3 ? 1 : 0) + (L >= 5 ? 1 : 0) : 0;
+    const dist = Math.round((200 + L * 75 + rnd(0, 140)) / 10) * 10;
+    const wind = L === 0 ? 0 : Math.round(rnd(0.3, 1 + L * 0.75) * 10) / 10 * (Math.random() < 0.5 ? -1 : 1);
+    const time = type === "getaway" ? 32 : type === "overwatch" ? 60 : type === "precision" ? Math.max(35, 60 - L * 4) : Math.max(35, 75 - L * 5 - (n - 1) * 4);
+    const crowd = Math.min(40, 16 + L * 3);
+    const car = type === "getaway" ? { type: pick(CAR_TYPES), color: pick(Object.keys(CAR_COLS)) } : null;
+    const extra = { elim: (n - 1) * 700, overwatch: attackers * 300, getaway: 450, precision: 600 }[type];
+    const pay = Math.round((450 + L * 400 + dist * 1.4 + Math.abs(wind) * 150 + extra + (scene === "night" ? 600 : 0)) * rnd(0.9, 1.15) / 10) * 10;
     const taken = (save.board || []).map((x) => x.code);
-    return { id: Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), code: pick(CODES.filter((x) => !taken.includes(x))), villain: pick(VILLAINS), place: pick(PLACES[scene]),
-      L, risky: !!risky, scene, n, dist, wind, targets, time, crowd, pay, rep: 10 + L * 6 + (n - 1) * 6 };
+    return { v: 2, id: Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), code: pick(CODES.filter((x) => !taken.includes(x))), villain: pick(VILLAINS),
+      type, map, place: pick(MAPS[map].places), L, risky: !!risky, scene, n, attackers, dist, wind, time, crowd, car, pay, rep: 10 + L * 6 + (n - 1) * 6 + (type === "elim" ? 0 : 4) };
   }
   function freshBoard() {
     const L = rankIndex(save.rep);
     save.board = [];
-    [genContract(L - 1), genContract(L), genContract(L + 1, true)].forEach((c) => { c.code = pick(CODES.filter((x) => !save.board.some((b) => b.code === x))); save.board.push(c); });
+    const a = genContract(L - 1), b = genContract(L), c = genContract(L + 1, true);
+    if (b.type === a.type && L >= 1) Object.assign(b, genContract(L, false, pick(["overwatch", "getaway", "precision"].filter((t) => L >= 2 || t !== "precision"))));
+    [a, b, c].forEach((x) => { x.code = pick(CODES.filter((y) => !save.board.some((z) => z.code === y))); save.board.push(x); });
     persist();
+  }
+  function describe(c) {
+    if (c.type === "overwatch") return "A witness is walking to a safe house. " + c.attackers + " assassins are hiding in the crowd. Stop them when they make their move.";
+    if (c.type === "getaway") return "A getaway driver in a " + c.car.color + " " + c.car.type + " is about to escape. Shoot one of its tyres.";
+    if (c.type === "precision") return "A hacker is uploading stolen files. Destroy their laptop without hurting anyone.";
+    return (c.n > 1 ? c.n + " targets, all working for " : "Target: ") + c.villain + ".";
   }
 
   // ---------- audio
@@ -306,6 +376,7 @@ h1.logo span { color: var(--green); }
     shot: () => (val("silencer") ? noise(0.18, 0.5, 900) : noise(0.55, 1.1, 2600)),
     click: () => tone([180], 0.06, "square"),
     hit: () => tone([660, 880], 0.08),
+    alert: () => tone([880, 660], 0.09, "square"),
     win: () => tone([523, 659, 784, 1046], 0.12),
     fail: () => tone([330, 247, 196], 0.18, "sawtooth"),
   };
@@ -316,7 +387,7 @@ h1.logo span { color: var(--green); }
 
   let tab = "c";
   function renderHub() {
-    if (!save.board) freshBoard();
+    if (!save.board || save.board.some((c) => c.v !== 2)) freshBoard();
     show("hub");
     $("cash").textContent = fmt$(save.cash);
     const ri = rankIndex(save.rep), next = RANKS[ri + 1];
@@ -334,21 +405,22 @@ h1.logo span { color: var(--green); }
     const box = $("contracts"); box.replaceChildren();
     save.board.forEach((c) => {
       const card = el("div", "card" + (c.risky ? " risky" : ""));
-      const h = el("h3"); h.append("Operation " + c.code); h.appendChild(el("small", null, fmt$(c.pay))); card.appendChild(h);
-      card.appendChild(el("p", null, (c.n > 1 ? c.n + " targets, all working for " : "Target: ") + c.villain + ". Location: " + c.place + "."));
+      const h = el("h3"); h.append(TYPES[c.type].icon + " Operation " + c.code); h.appendChild(el("small", null, fmt$(c.pay))); card.appendChild(h);
+      card.appendChild(el("p", null, describe(c) + " Location: " + c.place + "."));
       const chips = el("div", "chips");
       const chip = (t, cls) => chips.appendChild(el("span", "chip" + (cls ? " " + cls : ""), t));
+      chip(TYPES[c.type].name, "good");
+      chip(MAPS[c.map].icon + " " + MAPS[c.map].name);
       chip(["☀️ Day", "🌆 Dusk", "🌙 Night"][["day", "dusk", "night"].indexOf(c.scene)], c.scene === "night" && !val("thermal") ? "warn" : "");
       chip("↦ " + c.dist + " m");
-      chip("💨 " + (c.wind ? Math.abs(c.wind) + " m/s " + (c.wind > 0 ? "→" : "←") : "calm"), Math.abs(c.wind) >= 3 ? "warn" : "");
+      chip("💨 " + (c.wind ? Math.abs(c.wind) + " m/s " + (c.wind > 0 ? "→" : "←") + (c.L >= 2 ? " gusty" : "") : "calm"), Math.abs(c.wind) >= 3 ? "warn" : "");
       chip("⏱ " + c.time + "s");
-      if (c.targets.includes("street")) chip("🚶 moving target", "warn");
       chip("+" + c.rep + " rep", "good");
       if (c.risky) chip("Risky", "warn");
       card.appendChild(chips);
       const row = el("div", "cardrow");
       const pips = el("div", "pips"); pips.setAttribute("aria-label", "Difficulty " + (c.L + 1));
-      for (let i = 0; i < 6; i++) pips.appendChild(el("i", i <= c.L ? "on" : ""));
+      for (let i = 0; i < 7; i++) pips.appendChild(el("i", i <= c.L ? "on" : ""));
       row.appendChild(pips);
       const b = el("button", "btn small", "Accept"); b.type = "button"; b.onclick = () => startMission(c);
       row.appendChild(b); card.appendChild(row);
@@ -395,28 +467,21 @@ h1.logo span { color: var(--green); }
       p.classList.add("help");
       p.appendChild(el("h2", null, "How to play"));
       const add = (h, items) => { p.appendChild(el("h4", null, h)); const ul = el("ul"); items.forEach((t) => ul.appendChild(el("li", null, t))); p.appendChild(ul); };
-      add("1. Take a contract", ["Pick a job from the board. Risky ones pay more.", "Read the briefing: three clues describe your target."]);
-      add("2. Find the target", ["Tap anywhere on the scene to look through the scope.", "Drag to move your aim. Check people's hats, tops, hair, sunglasses and briefcases."]);
-      add("3. Take the shot", ["Hold your breath to steady the scope, then tap Fire.", "Bullets take time to arrive. Lead moving targets and allow for wind (the marks on your crosshair help).", "Never hit a bystander: the contract is cancelled."]);
-      add("4. Don't let them escape", ["Miss and the crowd panics. Your target runs for an exit or ducks out of sight.", "A silencer keeps people calm. Run out of time or bullets and the job fails."]);
-      add("5. Upgrade", ["Spend your pay in the Armoury: better scope, steadier aim, faster bullets, a silencer and more."]);
+      add("Contracts", ["🎯 Eliminate: find the person matching the clues.", "🛡️ Overwatch: protect the witness (green). Stop attackers the moment they reveal themselves (red !).",
+        "🚗 Getaway: shoot a tyre on the right car before it leaves.", "💻 Precision: hit the hacker's laptop, not the hacker."]);
+      add("Finding people", ["From far away everyone is a silhouette. Tap the scene to look through the scope and check hats, tops, hair, sunglasses and briefcases.",
+        "On bigger jobs the last clue arrives during the mission.", "Trees, crates and boards can block your shot."]);
+      add("Taking the shot", ["Drag to aim. Hold your breath to steady the scope, then tap Fire.", "Bullets take time to arrive: lead moving targets and allow for wind (it gusts on harder jobs). The marks on the crosshair help.",
+        "Never hit a bystander: the contract is cancelled."]);
+      add("Don't let them escape", ["Miss and the crowd panics. Your target runs or ducks out of sight. A silencer keeps people calm.", "Run out of time or bullets and the job fails."]);
+      add("Upgrade", ["Spend your pay in the Armoury: better scope, steadier aim, faster bullets, a silencer and more."]);
       const b = el("button", "btn wide", "Got it"); b.type = "button"; b.style.marginTop = "18px";
       b.onclick = () => { closeOverlay(); save.seenHelp = true; persist(); if (after) after(); };
       p.appendChild(b);
     });
   }
 
-  // ---------- world
-  const W = 1000, H = 1300;
-  const ROOF = 170, FLOOR_H = 150, BLD_L = 120, BLD_R = 880;
-  const BALCONY_FLOORS = [1, 3];
-  const WINDOW_FLOORS = [0, 2, 4, 5];
-  const WIN_X = [160, 335, 510, 685], WIN_W = 115, WIN_H = 100;
-  const STREET_Y = [1212, 1236];
-  const DOOR_X = 500;
-  const floorTop = (i) => ROOF + i * FLOOR_H;
-  const balconyY = (i) => floorTop(i) + FLOOR_H - 8;
-
+  // ---------- canvas
   let cv = $("cv"), ctx = cv.getContext("2d"), dpr = 1, sw = 0, sh = 0;
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2); sw = window.innerWidth; sh = window.innerHeight;
@@ -425,56 +490,72 @@ h1.logo span { color: var(--green); }
   window.addEventListener("resize", resize);
   const baseScale = () => Math.min(sw / W, sh / H) * 0.98;
 
-  let M = null;   // the mission in progress
-  let pid = 0;
-  function makePerson(kind, look, opts) {
-    const p = Object.assign({ id: ++pid, kind, look, state: "idle", dir: Math.random() < 0.5 ? -1 : 1, t: rnd(0, 3), walk: rnd(0, 6), speed: rnd(18, 32), x: 0, y: 0, alpha: 1 }, opts || {});
-    return p;
+  // ---------- the mission
+  let M = null, pid = 0;
+  function makePerson(spotId, look, opts) {
+    return Object.assign({ id: ++pid, spot: spotId, look, state: "idle", dir: Math.random() < 0.5 ? -1 : 1, t: rnd(0, 3), walk: rnd(0, 6), speed: rnd(18, 32), alpha: 1, away: 0 }, opts || {});
   }
-  function placePerson(kind, used) {
-    if (kind === "window") {
-      for (let tries = 0; tries < 40; tries++) {
-        const f = pick(WINDOW_FLOORS), w = Math.floor(Math.random() * 4), key = f + ":" + w;
-        if (used.has(key)) continue;
-        used.add(key);
-        const x0 = WIN_X[w];
-        return { x: x0 + WIN_W / 2 + rnd(-20, 20), y: floorTop(f) + 25 + WIN_H + 8, wx: x0, wy: floorTop(f) + 25, min: x0 + 22, max: x0 + WIN_W - 22, floor: f, speed: rnd(6, 12) };
-      }
-      return null;
+  function chooseSpot(map, allowWin) {
+    const entries = Object.entries(map.spots).map(([id, s]) => [id, s.w]);
+    if (allowWin) entries.push(["win", map.winW]);
+    let r = Math.random() * entries.reduce((t, e) => t + e[1], 0);
+    for (const [id, w] of entries) { r -= w; if (r <= 0) return id; }
+    return entries[0][0];
+  }
+  function placeAt(map, spotId, used) {
+    if (spotId === "win") {
+      const free = map.windows.map((w, i) => i).filter((i) => !used.has("w" + i));
+      if (!free.length) return null;
+      const i = pick(free); used.add("w" + i);
+      const w = map.windows[i];
+      return { spot: "win", win: i, x: w.x + w.w / 2 + rnd(-w.w * 0.15, w.w * 0.15), y: w.y + w.h + 8, min: w.x + 20, max: w.x + w.w - 20, speed: rnd(6, 12) };
     }
-    if (kind === "balcony") { const f = pick(BALCONY_FLOORS); return { x: rnd(200, 800), y: balconyY(f), min: 170, max: 830, floor: f, exitX: f === 1 ? 160 : 840 }; }
-    if (kind === "roof") return { x: rnd(220, 720), y: ROOF, min: 190, max: 740, exitX: 790 };
-    const lane = Math.random() < 0.5 ? 0 : 1;
-    return { x: rnd(-20, W + 20), y: STREET_Y[lane] + rnd(-3, 3), min: -60, max: W + 60, lane };
+    const s = map.spots[spotId];
+    if (s.mode === "sit") {
+      const free = map.seats.map((v, i) => i).filter((i) => !used.has("s" + i));
+      if (!free.length) return null;
+      const i = pick(free); used.add("s" + i);
+      return { spot: spotId, seat: i, x: map.seats[i].x, y: map.seats[i].y, sit: true };
+    }
+    return { spot: spotId, x: s.mode === "cross" ? rnd(-20, W + 20) : rnd(s.min, s.max), y: s.y + (s.mode === "cross" ? rnd(-3, 3) : 0) };
   }
+  const spotOf = (p) => (p.spot === "win" ? null : M.map.spots[p.spot]);
+  const layerOf = (p) => (p.spot === "win" ? 1 : spotOf(p).layer) + p.y / 100000;
 
   function startMission(c) {
     resize();
-    const used = new Set();
-    const people = [];
-    const targetLooks = [];
-    // Targets first.
-    const targets = c.targets.map((kind) => {
+    const map = MAPS[c.map], used = new Set(), people = [];
+    const targets = [];
+    let vip = null;
+    // Who the mission is about
+    const keyPeople = c.type === "elim" ? c.n : c.type === "precision" ? 1 : 0;
+    for (let i = 0; i < keyPeople; i++) {
+      let pos = null;
+      for (let k = 0; k < 20 && !pos; k++) {
+        let sp = c.L === 0 ? pick(["win", map.vip]) : chooseSpot(map, true);
+        if (c.type === "precision") sp = pick(["win", ...Object.keys(map.spots).filter((id) => map.spots[id].mode !== "cross")]);
+        pos = placeAt(map, sp, used);
+      }
       const look = randomLook();
-      if (kind === "window" && look.acc === "briefcase") look.acc = "none";
-      let pos = placePerson(kind, used);
-      if (!pos) { kind = "street"; pos = placePerson("street", used); }
-      const all = clueList(look, kind);
-      // Pick three clues, mixing which ones so it isn't always the same.
-      const clues = all.sort(() => Math.random() - 0.5).slice(0, 3);
-      targetLooks.push(look);
-      const p = makePerson(kind, look, Object.assign(pos, { target: true, clues }));
-      if (kind === "street") p.speed = rnd(16, 24 + c.L * 3);
-      people.push(p);
-      return p;
-    });
-    // The crowd. Some deliberately share clues with a target to make it harder.
-    const share = clamp(0.15 + c.L * 0.08, 0.15, 0.6);
+      if (pos.spot === "win" && look.acc === "briefcase") look.acc = "none";
+      const all = clueList(look, pos.spot === "win" ? "window" : "lane").sort(() => Math.random() - 0.5).slice(0, 3);
+      const p = makePerson(pos.spot, look, Object.assign(pos, { target: true, clues: all, still: c.type === "precision" }));
+      if (c.type === "elim" && c.L >= 3) p.intelAt = rnd(10, 18);   // the third clue arrives later
+      if (map.spots[p.spot] && map.spots[p.spot].mode === "cross") p.speed = rnd(16, 24 + c.L * 3);
+      people.push(p); targets.push(p);
+    }
+    if (c.type === "overwatch") {
+      const s = map.spots[map.vip];
+      vip = makePerson(map.vip, { skin: pick(SKINS), hair: "grey", hat: "none", hatC: "white", top: "white", legs: "#22252a", acc: "briefcase" },
+        { x: -40, y: s.y, dir: 1, vip: true, speed: (W + 100) / (c.time - 4) });
+      people.push(vip);
+    }
+    // The crowd. Some deliberately share all but one clue with a target.
+    const share = clamp(0.25 + c.L * 0.1, 0.25, 0.7);
     for (let i = 0; i < c.crowd; i++) {
-      const r = Math.random(), kind = r < 0.3 ? "window" : r < 0.48 ? "balcony" : r < 0.56 && c.L >= 1 ? "roof" : "street";
-      const pos = placePerson(kind, used); if (!pos) continue;
+      const pos = placeAt(map, chooseSpot(map, true), used); if (!pos) continue;
       let look = randomLook();
-      if (Math.random() < share) {   // a near-miss decoy
+      if (targets.length && Math.random() < share) {
         const t = pick(targets);
         look = Object.assign({}, t.look, { skin: pick(SKINS), legs: look.legs });
         const change = pick(t.clues);
@@ -485,48 +566,98 @@ h1.logo span { color: var(--green); }
           else look.hair = pick(Object.keys(HAIRS));
         }
       }
-      // Nobody else may match every clue of a target.
       targets.forEach((t) => { for (let k = 0; k < 30 && matches(look, t.clues); k++) look = randomLook(); });
-      if (kind === "window" && look.acc === "briefcase") look.acc = "none";
-      people.push(makePerson(kind, look, pos));
+      if (pos.spot === "win" && look.acc === "briefcase") look.acc = "none";
+      people.push(makePerson(pos.spot, look, pos));
     }
-    M = { c, people, targets, time: c.time, ammo: val("mag"), shots: 0, scoped: false, aim: { x: W / 2, y: 600 }, swayT: rnd(0, 10), breath: val("breath"), holding: false,
-      tired: 0, bullets: [], puffs: [], alarm: false, alarmBefore: false, kick: 0, over: false, startedAt: performance.now(), elapsed: 0, thermal: false,
-      lamps: [80, 330, 670, 920], lit: WINDOW_FLOORS.flatMap((f) => WIN_X.map((x, w) => [f + ":" + w, c.scene === "day" ? false : Math.random() < 0.7])) };
-    M.lit = Object.fromEntries(M.lit);
-    targets.forEach((t) => { if (t.kind === "window") M.lit[t.floor + ":" + WIN_X.indexOf(t.wx)] = true; });
-    people.forEach((p) => { if (p.kind === "window") M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] = M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] || Math.random() < 0.8; });
+    // Overwatch: some of the crowd are attackers, who reveal themselves while the witness walks past.
+    if (c.type === "overwatch") {
+      const pool = people.filter((p) => !p.vip).sort(() => Math.random() - 0.5);
+      const crossing = (W + 100) / vip.speed;
+      pool.slice(0, c.attackers).forEach((p, i) => {
+        p.attacker = true; p.revealAt = crossing * (0.12 + 0.62 * (i + rnd(0.1, 0.9)) / c.attackers);
+      });
+    }
+    // Precision: the hacker's laptop, and some decoy laptops on harder jobs.
+    const laptops = [];
+    if (c.type === "precision") {
+      laptops.push({ owner: targets[0], real: true });
+      people.filter((p) => !p.target && (p.spot === "win" || p.sit || (map.spots[p.spot] && map.spots[p.spot].mode === "wander"))).slice(0, c.L >= 3 ? 2 : c.L >= 2 ? 1 : 0)
+        .forEach((p) => { p.still = true; laptops.push({ owner: p, real: false }); });
+    }
+    M = { c, map, people, targets, vip, laptops, cars: [], carT: rnd(0.5, 2), time: c.time, ammo: val("mag"), shots: 0, scoped: false, aim: { x: W / 2, y: 700 },
+      swayT: rnd(0, 10), breath: val("breath"), holding: false, tired: 0, bullets: [], puffs: [], alarm: false, kick: 0, over: false, elapsed: 0, thermal: false,
+      gust: c.L >= 2 ? 0.25 + c.L * 0.05 : 0, gustPh: rnd(0, 6), wind: c.wind, stopped: 0,
+      lit: map.windows.map(() => c.scene === "day" ? false : Math.random() < 0.6) };
+    people.forEach((p) => { if (p.spot === "win") M.lit[p.win] = M.lit[p.win] || Math.random() < 0.8 || p.target; });
+    if (c.type === "getaway") M.carDue = rnd(3, 7);
+    // Some traffic already on the road
+    if (map.roads.length) for (let i = 0; i < 2; i++) spawnCar(false, rnd(100, 900));
     show("game");
     buildBrief();
     setScoped(false);
     $("thermalBtn").hidden = !val("thermal");
     $("distText").textContent = c.dist + " m";
-    $("windBox").innerHTML = "";
-    $("windBox").append("💨 ", el("b", null, c.wind ? Math.abs(c.wind) + " " + (c.wind > 0 ? "→" : "←") : "calm"));
-    if (TEST) window.LS = { M, W, H, fireAt, setScoped, travel, drift, drop };
+    windHud();
+    if (TEST) window.LS = { M, W, H, fireAt, setScoped, travel, drift, drop, hits, front };
     if (!save.seenHelp) openHelp();
   }
 
+  function windHud() {
+    const w = Math.round(M.wind * 10) / 10;
+    $("windBox").replaceChildren("💨 ", el("b", null, w ? Math.abs(w).toFixed(1) + " " + (w > 0 ? "→" : "←") : "calm"));
+  }
   function buildBrief() {
     const b = $("brief"); b.replaceChildren();
-    if (val("dossier")) M.targets.forEach((t) => { const c = document.createElement("canvas"); c.width = 88; c.height = 108; drawPortrait(c, t.look); if (t.state === "down") c.style.opacity = ".35"; b.appendChild(c); });
-    const txt = el("div", "txt");
-    M.targets.forEach((t, i) => {
-      txt.appendChild(el("b", null, M.targets.length > 1 ? "Target " + (i + 1) : "Target"));
-      txt.appendChild(el("span", t.state === "down" ? "done" : "", t.clues.map((c) => c.t).join(" · ")));
-      txt.appendChild(document.createElement("br"));
-    });
+    const c = M.c, txt = el("div", "txt");
+    if (c.type === "overwatch") {
+      const down = M.people.filter((p) => p.attacker && p.state === "down").length;
+      txt.appendChild(el("b", null, "Protect the witness"));
+      txt.append("Green ring = witness. Shoot attackers when they show a red ! (" + down + " / " + c.attackers + " stopped)");
+    } else if (c.type === "getaway") {
+      txt.appendChild(el("b", null, "Getaway car"));
+      txt.append("Shoot a tyre on the " + c.car.color + " " + c.car.type + ". " + (M.target ? (M.target.state === "stopped" ? "Stopped!" : "It's on the road!") : "Not here yet…"));
+    } else {
+      if (val("dossier")) M.targets.forEach((t) => { const cc = document.createElement("canvas"); cc.width = 88; cc.height = 108; drawPortrait(cc, t.look); if (t.state === "down") cc.style.opacity = ".35"; b.appendChild(cc); });
+      M.targets.forEach((t, i) => {
+        txt.appendChild(el("b", null, c.type === "precision" ? "Hacker (hit the laptop)" : M.targets.length > 1 ? "Target " + (i + 1) : "Target"));
+        const shown = t.intelAt > 0 ? t.clues.slice(0, 2) : t.clues;
+        txt.appendChild(el("span", t.state === "down" ? "done" : "", shown.map((x) => x.t).join(" · ") + (t.intelAt > 0 ? " · 🔒 intel in " + Math.ceil(t.intelAt) + "s" : "")));
+        txt.appendChild(document.createElement("br"));
+      });
+    }
     b.appendChild(txt);
   }
-  function drawPortrait(c, look) {
-    const g = c.getContext("2d"); g.fillStyle = "#22302a"; g.fillRect(0, 0, c.width, c.height);
-    g.save(); g.translate(c.width / 2, c.height + 40); g.scale(2, 2); drawBody(g, 0, 0, look, 1, 0, false); g.restore();
+  function drawPortrait(cc, look) {
+    const g = cc.getContext("2d"); g.fillStyle = "#22302a"; g.fillRect(0, 0, cc.width, cc.height);
+    g.save(); g.translate(cc.width / 2, cc.height + 40); g.scale(2, 2); drawBody(g, 0, 0, look, 1, 0, false, false, false); g.restore();
+  }
+
+  // ---------- traffic
+  function spawnCar(target, x) {
+    const roads = M.map.roads; if (!roads.length) return;
+    const lane = Math.floor(Math.random() * roads.length), dir = lane === 0 ? 1 : -1;
+    let type = pick(CAR_TYPES), color = pick(Object.keys(CAR_COLS));
+    if (target) { type = M.c.car.type; color = M.c.car.color; }
+    else if (M.c.car) for (let k = 0; k < 20 && type === M.c.car.type && color === M.c.car.color; k++) color = pick(Object.keys(CAR_COLS));
+    const len = type === "van" ? 112 : type === "pickup" ? 104 : 96;
+    const sx = x != null ? x : dir > 0 ? -len : W + len;
+    if (!target && M.cars.some((o) => o.lane === lane && Math.abs(o.x - sx) < 160)) return null;
+    const car = { x: sx, y: roads[lane], lane, dir, len, type, color, target, speed: target ? rnd(80, 95) + M.c.L * 4 : rnd(70, 110), state: "drive" };
+    M.cars.push(car);
+    if (target) { M.target = car; toast("Here it comes!", "#ffbf3c"); sfx.alert(); buildBrief(); }
+    return car;
+  }
+  const wheelXs = (car) => [car.x - car.len * 0.31, car.x + car.len * 0.31];
+  function carBox(car) {
+    const h = car.type === "van" ? 54 : car.type === "pickup" ? 46 : 44;
+    return { x: car.x - car.len / 2, y: car.y - h, w: car.len, h: h - 6 };
   }
 
   // ---------- ballistics
   const travel = () => M.c.dist / (850 * val("rifle"));
-  const drift = () => M.c.wind * travel() * 9;   // world units sideways
-  const drop = () => 36 * travel() * travel();    // world units down
+  const drift = () => M.wind * travel() * 9;   // world units sideways
+  const drop = () => 36 * travel() * travel();  // world units down
 
   function setScoped(on) {
     if (!M) return;
@@ -584,15 +715,15 @@ h1.logo span { color: var(--green); }
 
   // ---------- shooting
   function swayOffset() {
-    const amp = 9 * val("stab") * (M.holding ? 0.12 : 1) * (M.tired > 0 ? 1.8 : 1);
+    const amp = 13 * val("stab") * (M.holding ? 0.12 : 1) * (M.tired > 0 ? 1.9 : 1);
     const t = M.swayT;
     return { x: amp * (Math.sin(t * 1.3) * 0.8 + Math.sin(t * 2.9 + 1) * 0.35), y: amp * (Math.sin(t * 1.7 + 2) * 0.6 + Math.sin(t * 3.7) * 0.3) };
   }
   function fire() {
     if (!M || M.over || !M.scoped) return;
     if (M.ammo <= 0) { sfx.click(); toast("Out of ammo", "#ff5a52"); return; }
-    const sw0 = swayOffset();
-    fireAt(M.aim.x + sw0.x, M.aim.y + sw0.y);
+    const s = swayOffset();
+    fireAt(M.aim.x + s.x, M.aim.y + s.y);
   }
   function fireAt(ax, ay) {
     M.ammo--; M.shots++;
@@ -600,95 +731,198 @@ h1.logo span { color: var(--green); }
     M.bullets.push({ t: travel(), x: ax + drift(), y: ay + drop() });
     $("hint").hidden = true;
   }
-  function impact(b) {
-    // Front-most first: street, then roof, balconies, windows.
-    const order = M.people.filter((p) => p.state !== "down" && p.state !== "gone" && p.alpha > 0.3).sort((a, b2) => layer(b2) - layer(a) || b2.y - a.y);
-    const hit = order.find((p) => hits(p, b.x, b.y));
-    M.puffs.push({ x: b.x, y: b.y, t: 0, hit: !!hit });
-    if (hit) {
-      hit.state = "down"; hit.fall = 0;
-      if (hit.target) {
-        sfx.hit(); buzz([20, 30, 20]); toast("Target down", "#6cf08f"); buildBrief();
-        if (M.targets.every((t) => t.state === "down")) return endMission(true);
-        raiseAlarm(b, val("silencer") ? 260 : Infinity);   // everyone hears an unsilenced rifle
-      } else {
-        return endMission(false, "You hit a bystander", "The agency doesn't tolerate mistakes. The contract has been cancelled.");
-      }
-    } else {
-      toast("Missed", "#ffbf3c");
-      raiseAlarm(b, val("silencer") ? 220 : Infinity);
-    }
-    if (M.ammo <= 0 && M.bullets.length === 0) setTimeout(() => { if (M && !M.over) endMission(false, "Out of ammo", "Your targets got away while you reloaded."); }, 900);
+  function laptopBox(l) {
+    const p = l.owner;
+    if (p.spot === "win") { const w = M.map.windows[p.win]; return { x: p.x + 2, y: w.y + w.h - 18, w: 16, h: 11 }; }
+    if (p.sit) return { x: p.x - 7, y: p.y - 24, w: 15, h: 10 };
+    return { x: p.x + (p.dir > 0 ? 3 : -18), y: p.y - 30, w: 15, h: 10 };
   }
-  const layer = (p) => ({ street: 4, roof: 3, balcony: 2, window: 1 }[p.kind]);
+  const inBox = (b, x, y, pad) => x >= b.x - (pad || 0) && x <= b.x + b.w + (pad || 0) && y >= b.y - (pad || 0) && y <= b.y + b.h + (pad || 0);
+  // Whatever is nearest to you at a point: a person, a laptop, a tyre, a car body or something solid in the way.
+  function front(x, y) {
+    let best = null;
+    const add = (k, layer, obj) => { if (!best || layer > best.layer) best = { k, layer, obj }; };
+    M.people.forEach((p) => { if (p.state !== "down" && p.state !== "gone" && p.alpha > 0.3 && hits(p, x, y)) add("p", layerOf(p), p); });
+    M.laptops.forEach((l) => { if (!l.broken && l.owner.state !== "gone" && l.owner.alpha > 0.3 && inBox(laptopBox(l), x, y, 1)) add("l", layerOf(l.owner) + 0.0001, l); });
+    (M.map.covers || []).forEach((c) => { if (c.r ? Math.hypot(x - c.cx, y - c.cy) <= c.r : inBox(c, x, y)) add("c", c.layer, c); });
+    M.cars.forEach((car) => {
+      const lay = 6 + car.lane * 0.5;
+      if (wheelXs(car).some((wx) => Math.hypot(x - wx, y - (car.y - 9)) <= 10)) add("w", lay + 0.01, car);
+      else if (inBox(carBox(car), x, y)) add("cb", lay, car);
+    });
+    return best;
+  }
+  function impact(b) {
+    const f = front(b.x, b.y), c = M.c;
+    if (TEST) {
+      const want = M.people.find((q) => (q.target || (q.attacker && q.revealed)) && q.state !== "down" && q.state !== "gone") || M.target;
+      (M.log = M.log || []).push(f ? f.k + (f.obj && (f.obj.target || f.obj.attacker || f.obj.real) ? "*" : "") : "air" + (want ? "(" + Math.round(b.x - want.x) + "," + Math.round(b.y - want.y) + "," + (want.spot || "car") + ")" : ""));
+    }
+    M.puffs.push({ x: b.x, y: b.y, t: 0, hit: !!f && f.k !== "c" });
+    const loud = val("silencer") ? 240 : Infinity;   // everyone hears an unsilenced rifle
+    if (f && f.k === "p") {
+      const p = f.obj;
+      if (p.vip) { p.state = "down"; p.fall = 0; return endMission(false, "You hit the witness", "The person you were protecting is down. The agency is furious."); }
+      if (p.target && c.type === "elim") {
+        p.state = "down"; p.fall = 0; sfx.hit(); buzz([20, 30, 20]); toast("Target down", "#6cf08f"); buildBrief();
+        if (M.targets.every((t) => t.state === "down")) return endMission(true);
+        return raiseAlarm(b, val("silencer") ? 260 : Infinity);
+      }
+      if (p.attacker) {
+        p.state = "down"; p.fall = 0; sfx.hit(); buzz([20, 30, 20]); toast(p.revealed ? "Attacker down" : "Lucky shot", "#6cf08f"); buildBrief();
+        if (M.people.filter((q) => q.attacker).every((q) => q.state === "down")) return endMission(true);
+        return raiseAlarm(b, loud);
+      }
+      p.state = "down"; p.fall = 0;
+      return endMission(false, c.type === "precision" && p.target ? "We needed them alive" : "You hit a bystander",
+        c.type === "precision" && p.target ? "The job was the laptop, not the hacker. The contract is off." : "The agency doesn't tolerate mistakes. The contract has been cancelled.");
+    }
+    if (f && f.k === "l") {
+      f.obj.broken = true;
+      if (f.obj.real) { sfx.hit(); toast("Laptop destroyed", "#6cf08f"); return endMission(true); }
+      return endMission(false, "Wrong laptop", "You destroyed an innocent person's computer, and the hacker's upload finished.");
+    }
+    if (f && f.k === "w") {
+      const car = f.obj;
+      if (car.target) { car.state = "stopped"; sfx.hit(); toast("Tyre hit!", "#6cf08f"); buildBrief(); const mm = M; return setTimeout(() => { if (M === mm) endMission(true); }, 900); }
+      car.state = "stopped";
+      return endMission(false, "Wrong car", "You stopped an innocent driver. The getaway car is long gone.");
+    }
+    if (f && f.k === "cb" && f.obj.target) { f.obj.speed *= 1.35; toast("Hit the body, not a tyre!", "#ffbf3c"); }
+    else toast(f && f.k === "c" ? "Blocked" : "Missed", "#ffbf3c");
+    raiseAlarm(b, val("silencer") ? 220 : Infinity);
+    const mm = M;
+    if (M.ammo <= 0 && M.bullets.length === 0) setTimeout(() => { if (M === mm && !M.over) endMission(false, "Out of ammo", "You ran out of bullets before the job was done."); }, 900);
+  }
   function hits(p, x, y) {
-    if (p.kind === "window") { if (x < p.wx || x > p.wx + WIN_W || y < p.wy || y > p.wy + WIN_H - 4) return false; }
-    if (p.kind === "balcony" && y > p.y - 16) return false;   // the railing takes it
-    const hx = p.x, hy = p.y - 44;
-    if ((x - hx) * (x - hx) + (y - hy) * (y - hy) <= 8 * 8) return true;
+    if (p.spot === "win") { const w = M.map.windows[p.win]; if (x < w.x || x > w.x + w.w || y < w.y || y > w.y + w.h - 4) return false; }
+    const s = spotOf(p);
+    if (s && s.rail && y > p.y - s.rail) return false;   // the railing takes it
+    if (p.sit && p.state !== "flee") return (x - p.x) ** 2 + (y - (p.y - 34)) ** 2 <= 64 || (x >= p.x - 9 && x <= p.x + 9 && y >= p.y - 27 && y <= p.y - 6);
+    if ((x - p.x) ** 2 + (y - (p.y - 44)) ** 2 <= 64) return true;
     return x >= p.x - 9 && x <= p.x + 9 && y >= p.y - 37 && y <= p.y;
   }
   function raiseAlarm(at, radius) {
     if (!M || M.over) return;
     M.people.forEach((p) => {
-      if (p.state === "down" || p.state === "gone" || p.state === "flee") return;
+      if (p.state === "down" || p.state === "gone" || p.state === "flee" || p.vip || (p.attacker && p.revealed)) return;
       if (at && Math.hypot(p.x - at.x, (p.y - 20) - at.y) > radius) return;
-      p.state = "flee"; p.react = rnd(0.2, 0.9) + (p.target ? 0.3 : 0);
-      if (p.kind === "street") { p.exitX = p.x < W / 2 ? (Math.abs(p.x - DOOR_X) < 220 && Math.random() < 0.5 ? DOOR_X : -60) : (Math.abs(p.x - DOOR_X) < 220 && Math.random() < 0.5 ? DOOR_X : W + 60); }
-      if (p.kind === "window") p.exitX = p.x;
+      if (p.attacker) return;   // attackers keep their cool
+      p.state = "flee"; p.react = rnd(0.2, 0.8) + (p.target ? 0.25 : 0);
+      const s = spotOf(p), exits = p.sit ? [-60, W + 60] : s ? s.exits : [];
+      p.exitX = exits.length ? exits.reduce((a, e) => (Math.abs(e - p.x) < Math.abs(a - p.x) ? e : a), exits[0]) : null;
+      if (p.sit) { p.sit = false; }
     });
+    if (M.target && M.target.state === "drive" && !M.target.fast) { M.target.speed *= 1.25; M.target.fast = true; }
     if (M.targets.some((t) => t.state === "flee") && !M.alarm) { M.alarm = true; toast("They've spotted you!", "#ff5a52"); }
+    if (!at || radius === Infinity) M.alarm = true;
   }
 
   // ---------- update
   let last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    let dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (TEST && window.LS_SPEED) dt *= window.LS_SPEED;
     if (M && !$("game").hidden) { if (!M.over && $("overlay").hidden) update(dt); draw(); }
     requestAnimationFrame(frame);
   }
   function update(dt) {
+    const c = M.c;
     M.elapsed += dt;
     M.time -= dt; M.swayT += dt * (M.holding ? 0.5 : 1);
     M.kick = Math.max(0, M.kick - dt * 4);
-    if (M.holding) { M.breath -= dt; if (M.breath <= 0) { M.holding = false; M.tired = 2; $("breathBtn").classList.remove("on"); } }
-    else M.breath = Math.min(val("breath"), M.breath + dt * 0.6);
+    if (M.gust) { const w = c.wind * (1 + M.gust * Math.sin(M.elapsed * 0.35 + M.gustPh) + M.gust * 0.5 * Math.sin(M.elapsed * 0.9)); if (Math.abs(w - M.wind) > 0.05) { M.wind = w; windHud(); } }
+    if (M.holding) { M.breath -= dt; if (M.breath <= 0) { M.holding = false; M.tired = 2.5; $("breathBtn").classList.remove("on"); } }
+    else M.breath = Math.min(val("breath"), M.breath + dt * 0.45);
     if (M.tired > 0) M.tired -= dt;
     $("breathMeter").style.height = (M.breath / val("breath") * 100) + "%";
     const tl = Math.max(0, Math.ceil(M.time));
-    $("timeText").textContent = Math.floor(tl / 60) + ":" + String(tl % 60).padStart(2, "0");
+    $("timeText").textContent = c.type === "precision" ? "upload " + Math.min(99, Math.floor((1 - M.time / c.time) * 100)) + "%" : Math.floor(tl / 60) + ":" + String(tl % 60).padStart(2, "0");
     $("timeBox").classList.toggle("low", tl <= 10);
     $("ammoText").textContent = M.ammo + " / " + val("mag");
-    if (M.time <= 0) return endMission(false, "Out of time", "Your target left the area. The client isn't happy.");
+    // Intel that arrives during the mission
+    M.targets.forEach((t) => {
+      if (t.intelAt > 0) { const before = Math.ceil(t.intelAt); t.intelAt -= dt; if (t.intelAt <= 0) { toast("Intel update", "#ffbf3c"); sfx.alert(); buildBrief(); } else if (Math.ceil(t.intelAt) !== before) buildBrief(); }
+    });
+    if (M.time <= 0 && c.type !== "overwatch" && c.type !== "getaway") return endMission(false, c.type === "precision" ? "Upload complete" : "Out of time",
+      c.type === "precision" ? "The stolen files are out. You were too slow." : "Your target left the area. The client isn't happy.");
 
     M.bullets.forEach((b) => { b.t -= dt; });
     const landed = M.bullets.filter((b) => b.t <= 0); M.bullets = M.bullets.filter((b) => b.t > 0);
     for (const b of landed) { impact(b); if (M.over) return; }
     M.puffs.forEach((p) => { p.t += dt; }); M.puffs = M.puffs.filter((p) => p.t < 0.8);
 
+    // Traffic
+    if (M.map.roads.length) {
+      M.carT -= dt;
+      if (M.carT <= 0) { spawnCar(false); M.carT = rnd(1.6, 4); }
+      if (c.type === "getaway" && !M.target) { M.carDue -= dt; if (M.carDue <= 0) spawnCar(true); }
+      for (const car of M.cars) {
+        if (car.state === "stopped") { car.speed = Math.max(0, car.speed - dt * 160); }
+        car.x += car.dir * car.speed * dt;
+      }
+      // Cars slow down behind slower (or stopped) ones rather than driving through them.
+      M.cars.forEach((car) => {
+        if (car.x > 0 && car.x < W) car.seen = true;
+        M.cars.forEach((o) => {
+          if (o === car || o.lane !== car.lane || (o.x - car.x) * car.dir <= 0) return;
+          const gap = (o.len + car.len) / 2 + 12;
+          if (Math.abs(o.x - car.x) < gap + 30 && o.speed < car.speed) { car.speed = o.speed; if (car.state === "drive" && o.state === "stopped") car.blocked = true; }
+          if (Math.abs(o.x - car.x) < gap) car.x = o.x - car.dir * gap;
+        });
+      });
+      if (M.target && M.target.state === "drive" && M.target.seen && (M.target.x < -M.target.len || M.target.x > W + M.target.len)) return endMission(false, "The car got away", "The getaway car escaped. Shoot a tyre, not the bodywork.");
+      M.cars = M.cars.filter((car) => car === M.target || (car.x > -200 && car.x < W + 200));
+    }
+    if (c.type === "getaway" && M.time <= 0 && !M.over) return endMission(false, "The car got away", "The getaway car escaped.");
+
     for (const p of M.people) {
       p.t += dt;
       if (p.state === "down") { p.fall = Math.min(1, (p.fall || 0) + dt * 3); continue; }
       if (p.state === "gone") continue;
-      if (p.state === "flee") {
-        p.react -= dt; if (p.react > 0) continue;
-        const sp = p.kind === "window" ? 0 : 95;
-        if (p.kind === "window") { p.alpha -= dt * 1.6; if (p.alpha <= 0) gone(p); continue; }
-        const tx = p.exitX != null ? p.exitX : p.x;
-        p.dir = tx < p.x ? -1 : 1; p.walk += dt * 14;
-        p.x += p.dir * sp * dt;
-        if (Math.abs(p.x - tx) < 4 || p.x < -50 || p.x > W + 50) gone(p);
+      if (p.vip) {
+        p.walk += dt * 7; p.x += p.speed * dt;
+        if (p.x > W + 50) return endMission(true);
         continue;
       }
-      if (p.kind === "street") {
+      if (p.attacker && !p.revealed && M.elapsed >= p.revealAt && M.vip && M.vip.x > -20) {
+        p.revealed = true; p.threat = clamp(4.6 - c.L * 0.25, 2.6, 4.6); p.state = "attack"; p.alpha = 1; p.away = 0;
+        toast("Attacker!", "#ff5a52"); sfx.alert(); buzz([30, 30, 30]);
+      }
+      if (p.state === "attack") {
+        p.threat -= dt;
+        if (p.threat <= 0) return endMission(false, "The witness was attacked", "An attacker got to the witness. You needed to react faster.");
+        const s = spotOf(p);
+        if (s && s.mode !== "sit" && !p.sit) { const tx = clamp(M.vip.x, s.min != null ? s.min : -60, s.max != null ? s.max : W + 60); p.dir = tx < p.x ? -1 : 1; if (Math.abs(tx - p.x) > 4) { p.x += p.dir * 40 * dt; p.walk += dt * 10; } }
+        continue;
+      }
+      if (p.state === "flee") {
+        p.react -= dt; if (p.react > 0) continue;
+        if (p.spot === "win" || p.exitX == null) { p.alpha -= dt * 1.6; if (p.alpha <= 0) gone(p); continue; }
+        p.dir = p.exitX < p.x ? -1 : 1; p.walk += dt * 14;
+        p.x += p.dir * 95 * dt;
+        if (Math.abs(p.x - p.exitX) < 4 || p.x < -50 || p.x > W + 50) gone(p);
+        continue;
+      }
+      // Normal behaviour
+      if (p.spot === "win") {
+        // Now and then people step back from the window for a moment.
+        if (p.away > 0) { p.away -= dt; p.alpha = Math.max(0, p.alpha - dt * 3); if (p.away <= 0) p.awayBack = true; continue; }
+        if (p.awayBack) { p.alpha = Math.min(1, p.alpha + dt * 3); if (p.alpha >= 1) p.awayBack = false; }
+        else if (!p.still && Math.random() < dt * (0.04 + c.L * 0.012)) p.away = rnd(1.5, 3.5);
+      }
+      if (p.sit || p.still) { p.walk = 0; continue; }
+      const s = spotOf(p);
+      if (s && s.mode === "cross") {
         p.walk += dt * 7; p.x += p.dir * p.speed * dt;
         if (p.target) { if (p.x < 60 || p.x > W - 60 || Math.random() < dt * 0.08) p.dir = p.x < 60 ? 1 : p.x > W - 60 ? -1 : -p.dir; }
+        else if (p.attacker) { if (p.x < 80 || p.x > W - 80) p.dir = p.x < 80 ? 1 : -1; }
         else if (p.x < -40 || p.x > W + 40) { p.dir = -p.dir; p.look = randomLook(); M.targets.forEach((t) => { for (let k = 0; k < 30 && matches(p.look, t.clues); k++) p.look = randomLook(); }); }
       } else {
-        // Wander back and forth, with pauses.
         if (p.pause > 0) { p.pause -= dt; continue; }
         p.walk += dt * 6; p.x += p.dir * p.speed * 0.6 * dt;
-        if (p.x < p.min || p.x > p.max) { p.dir = p.x < p.min ? 1 : -1; p.x = clamp(p.x, p.min, p.max); }
+        const min = p.spot === "win" ? p.min : s.min, max = p.spot === "win" ? p.max : s.max;
+        if (p.x < min || p.x > max) { p.dir = p.x < min ? 1 : -1; p.x = clamp(p.x, min, max); }
         if (Math.random() < dt * 0.4) p.pause = rnd(0.8, 3);
         if (Math.random() < dt * 0.15) p.dir = -p.dir;
       }
@@ -696,14 +930,19 @@ h1.logo span { color: var(--green); }
   }
   function gone(p) {
     p.state = "gone";
-    if (p.target) endMission(false, "Target escaped", "Your target got away. They'll be much harder to find now.");
+    if (p.target) endMission(false, M.c.type === "precision" ? "The hacker got away" : "Target escaped", M.c.type === "precision" ? "They took the laptop with them." : "Your target got away. They'll be much harder to find now.");
   }
 
   // ---------- drawing
   const SCENES = {
-    day: { sky: ["#8fd0f7", "#e3f4ff"], bld: "#c8b59a", bld2: "#b3a083", win: "#7fa3bf", winIn: "#3c4a5a", street: "#9a9a96", road: "#4b4e52", dark: 0 },
-    dusk: { sky: ["#f2955d", "#5d4a86"], bld: "#9c7d68", bld2: "#86695a", win: "#5a5f7a", winIn: "#ffcf8a", street: "#7a7470", road: "#3c3c42", dark: 0.25 },
-    night: { sky: ["#070d22", "#1b2550"], bld: "#3b3f55", bld2: "#30344a", win: "#1c2133", winIn: "#ffcf70", street: "#3e4048", road: "#24262c", dark: 0.6 },
+    day: { sky: ["#8fd0f7", "#e3f4ff"], dark: 0 },
+    dusk: { sky: ["#f2955d", "#5d4a86"], dark: 0.25 },
+    night: { sky: ["#070d22", "#1b2550"], dark: 0.6 },
+  };
+  const PAL = {
+    day: { bld: "#c8b59a", bld2: "#b3a083", win: "#7fa3bf", winIn: "#3c4a5a", street: "#9a9a96", road: "#4b4e52", sea: "#3f7fa6", quay: "#a7a49b", hull: "#b23a2f", grass: "#6fae4f", path: "#d9c9a3", tree: "#3f7f3a", far: "#9fb6c8" },
+    dusk: { bld: "#9c7d68", bld2: "#86695a", win: "#5a5f7a", winIn: "#ffcf8a", street: "#7a7470", road: "#3c3c42", sea: "#3c4f7a", quay: "#7f7a76", hull: "#8f3027", grass: "#4f7d47", path: "#a89a86", tree: "#2f5a35", far: "#6d6286" },
+    night: { bld: "#3b3f55", bld2: "#30344a", win: "#1c2133", winIn: "#ffcf70", street: "#3e4048", road: "#24262c", sea: "#101a33", quay: "#3c3e46", hull: "#4a1f22", grass: "#1f3324", path: "#4a4640", tree: "#16261a", far: "#1e2540" },
   };
   function draw() {
     const g = ctx, sc = SCENES[M.c.scene];
@@ -713,18 +952,17 @@ h1.logo span { color: var(--green); }
     if (!M.scoped) {
       const ox = (sw - W * s0) / 2, oy = (sh - H * s0) / 2;
       g.setTransform(dpr * s0, 0, 0, dpr * s0, dpr * ox, dpr * oy);
-      drawWorld(g, sc, false, -ox / s0, (sw - ox) / s0);
+      drawWorld(g, sc, "far", -ox / s0, (sw - ox) / s0);
       return;
     }
     const zoom = val("scope"), S = s0 * zoom, sway = swayOffset();
-    const vx = M.aim.x + sway.x, vy = M.aim.y + sway.y - M.kick * 22 / zoom * 3;
+    const vx = M.aim.x + sway.x, vy = M.aim.y + sway.y - M.kick * 66 / zoom;
     const cx = sw / 2, cy = sh / 2, R = Math.min(sw, sh) * 0.47;
     g.save();
     g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
     g.setTransform(dpr * S, 0, 0, dpr * S, dpr * (cx - vx * S), dpr * (cy - vy * S));
-    drawWorld(g, sc, M.thermal, vx - R / S, vx + R / S);
+    drawWorld(g, sc, M.thermal ? "thermal" : "scope", vx - R / S, vx + R / S);
     g.restore();
-    // Scope housing and reticle.
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const grd = g.createRadialGradient(cx, cy, R * 0.75, cx, cy, R);
     grd.addColorStop(0, "rgba(0,0,0,0)"); grd.addColorStop(1, "rgba(0,0,0,.65)");
@@ -735,7 +973,7 @@ h1.logo span { color: var(--green); }
     g.moveTo(cx, cy - R); g.lineTo(cx, cy - 10); g.moveTo(cx, cy + 10); g.lineTo(cx, cy + R); g.stroke();
     // A mark every 5 world units, to help with wind, drop and leading.
     g.fillStyle = "rgba(0,0,0,.85)";
-    for (let k = 1; k <= 8; k++) {
+    for (let k = 1; k <= 12; k++) {
       const d = k * 5 * S, big = k % 2 === 0;
       if (d > R - 6) break;
       g.fillRect(cx + d - 1, cy - (big ? 6 : 3), 2, big ? 12 : 6); g.fillRect(cx - d - 1, cy - (big ? 6 : 3), 2, big ? 12 : 6);
@@ -747,112 +985,235 @@ h1.logo span { color: var(--green); }
       g.beginPath(); g.arc(cx + drift() * S, cy + drop() * S, 5, 0, Math.PI * 2); g.stroke();
     }
     if (val("facial")) {
-      const who = M.people.filter((p) => p.state !== "gone" && p.state !== "down" && p.alpha > 0.3).sort((a, b) => layer(b) - layer(a)).find((p) => hits(p, vx, vy) || hits(p, vx, vy + 20));
-      if (who) {
+      const f = front(vx, vy);
+      if (f && (f.k === "p" || f.k === "l")) {
+        const p = f.k === "l" ? f.obj.owner : f.obj, good = M.c.type === "precision" ? f.k === "l" && f.obj.real : (p.target && M.c.type === "elim") || p.attacker && p.revealed;
         g.font = "800 13px " + getComputedStyle(document.body).fontFamily;
-        g.textAlign = "center"; g.fillStyle = who.target ? "#6cf08f" : "#ff5a52";
-        g.fillText(who.target ? "✔ TARGET" : "✖ BYSTANDER", cx, cy - 26);
+        g.textAlign = "center"; g.fillStyle = good ? "#6cf08f" : "#ff5a52";
+        g.fillText(good ? "✔ TARGET" : p.vip ? "✖ WITNESS" : "✖ DON'T SHOOT", cx, cy - 26);
       }
     }
   }
 
-  function drawWorld(g, sc, thermal, xL, xR) {
-    // Sky
+  // Colour helpers for the three ways of seeing: from far away (silhouettes), through the scope, and thermal.
+  function C(mode, normal) { return mode === "thermal" ? "#0c142a" : normal; }
+  function drawWorld(g, sc, mode, xL, xR) {
+    const pal = PAL[M.c.scene], th = mode === "thermal";
     const sky = g.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, thermal ? "#050a1c" : sc.sky[0]); sky.addColorStop(1, thermal ? "#0b1530" : sc.sky[1]);
-    g.fillStyle = sky; g.fillRect(xL - 10, -400, xR - xL + 20, H + 800);
-    // Neighbouring buildings (scenery only).
-    for (let x = Math.floor((xL - 200) / 200) * 200; x < xR + 200; x += 200) {
-      if (x + 200 > BLD_L - 40 && x < BLD_R + 40) continue;
-      const top = 300 + ((x / 200) % 3 + 3) % 3 * 120;
-      g.fillStyle = thermal ? "#0e1730" : sc.bld2; g.fillRect(x, top, 190, H - top);
-      g.fillStyle = thermal ? "#121c38" : sc.win;
-      for (let y = top + 30; y < 1150; y += 90) for (let wx = x + 20; wx < x + 180; wx += 55) g.fillRect(wx, y, 34, 50);
-    }
-    // Main building
-    g.fillStyle = thermal ? "#101a36" : sc.bld; g.fillRect(BLD_L, ROOF, BLD_R - BLD_L, 1180 - ROOF);
-    g.fillStyle = thermal ? "#0c142a" : sc.bld2; g.fillRect(BLD_L - 10, ROOF - 12, BLD_R - BLD_L + 20, 14);
-    // roof hut
-    g.fillRect(760, ROOF - 48, 70, 40);
-    g.fillStyle = thermal ? "#0a1020" : "#2b2b2b"; g.fillRect(782, ROOF - 40, 26, 32);
-    // floors
-    for (let f = 0; f < 6; f++) {
-      const y = floorTop(f);
-      g.fillStyle = thermal ? "#0c142a" : sc.bld2; g.fillRect(BLD_L, y + FLOOR_H - 6, BLD_R - BLD_L, 6);
-      if (WINDOW_FLOORS.includes(f)) WIN_X.forEach((x, w) => {
-        const lit = M.lit[f + ":" + w];
-        g.fillStyle = thermal ? "#0a1124" : lit ? sc.winIn : sc.win; g.fillRect(x, y + 25, WIN_W, WIN_H);
-      });
-      else { g.fillStyle = thermal ? "#0a1124" : sc.win; for (let x = 150; x < 850; x += 140) g.fillRect(x, y + 20, 110, FLOOR_H - 34); }
-    }
-    // Ground floor shops and the door
-    g.fillStyle = thermal ? "#0a1124" : sc.win; g.fillRect(150, 1080, 280, 90); g.fillRect(570, 1080, 280, 90);
-    g.fillStyle = thermal ? "#08101f" : "#3a2a20"; g.fillRect(DOOR_X - 32, 1070, 64, 110);
-    // People: windows, balconies, roof, street (back to front)
-    const visible = (p) => p.state !== "gone" && p.x > xL - 30 && p.x < xR + 30;
-    M.people.filter((p) => p.kind === "window" && visible(p)).forEach((p) => {
-      g.save(); g.beginPath(); g.rect(p.wx, p.wy, WIN_W, WIN_H); g.clip(); drawPerson(g, p, sc, thermal, true); g.restore();
-    });
-    // window frames and sills
-    for (const f of WINDOW_FLOORS) WIN_X.forEach((x) => {
-      const y = floorTop(f) + 25;
-      g.strokeStyle = thermal ? "#18234a" : "rgba(255,255,255,.55)"; g.lineWidth = 4; g.strokeRect(x, y, WIN_W, WIN_H);
-      g.beginPath(); g.moveTo(x + WIN_W / 2, y); g.lineTo(x + WIN_W / 2, y + WIN_H * 0.45); g.stroke();
-      g.fillStyle = thermal ? "#18234a" : sc.bld2; g.fillRect(x - 8, y + WIN_H - 4, WIN_W + 16, 10);
-    });
-    for (const f of BALCONY_FLOORS) {
-      M.people.filter((p) => p.kind === "balcony" && p.floor === f && visible(p)).forEach((p) => drawPerson(g, p, sc, thermal));
-      const y = balconyY(f);
-      g.fillStyle = thermal ? "#18234a" : "#5b5f66"; g.fillRect(BLD_L - 20, y, BLD_R - BLD_L + 40, 10);
-      g.strokeStyle = thermal ? "#18234a" : "#2b2e33"; g.lineWidth = 3;
-      g.beginPath(); g.moveTo(BLD_L - 20, y - 18); g.lineTo(BLD_R + 20, y - 18);
-      for (let x = BLD_L - 20; x <= BLD_R + 20; x += 18) { g.moveTo(x, y - 18); g.lineTo(x, y); }
-      g.stroke();
-    }
-    M.people.filter((p) => p.kind === "roof" && visible(p)).forEach((p) => drawPerson(g, p, sc, thermal));
-    // Street
-    g.fillStyle = thermal ? "#0c142a" : sc.street; g.fillRect(xL - 10, 1180, xR - xL + 20, 70);
-    g.fillStyle = thermal ? "#08101f" : sc.road; g.fillRect(xL - 10, 1250, xR - xL + 20, 900);
-    g.fillStyle = thermal ? "#0c142a" : "#e8e2c8";
-    for (let x = Math.floor(xL / 80) * 80; x < xR; x += 80) g.fillRect(x, 1285, 40, 5);
-    // Lamps
-    M.lamps.forEach((x) => {
-      g.fillStyle = thermal ? "#18234a" : "#2b2e33"; g.fillRect(x - 3, 1100, 6, 100);
-      g.fillStyle = thermal ? "#18234a" : sc.dark ? "#ffe9a8" : "#d8d8d8"; g.fillRect(x - 10, 1094, 20, 8);
-      if (sc.dark && !thermal) { const lg = g.createRadialGradient(x, 1150, 5, x, 1150, 110); lg.addColorStop(0, "rgba(255,225,150,.35)"); lg.addColorStop(1, "rgba(255,225,150,0)"); g.fillStyle = lg; g.fillRect(x - 110, 1040, 220, 220); }
-    });
-    M.people.filter((p) => p.kind === "street" && visible(p)).sort((a, b) => a.y - b.y).forEach((p) => drawPerson(g, p, sc, thermal));
-    // Night darkness everywhere except lit windows and lamps.
-    if (sc.dark && !thermal) {
-      g.fillStyle = "rgba(4,6,18," + sc.dark * 0.55 + ")"; g.fillRect(xL - 10, -400, xR - xL + 20, H + 800);
-    }
-    // Bullet puffs
+    sky.addColorStop(0, th ? "#050a1c" : sc.sky[0]); sky.addColorStop(1, th ? "#0b1530" : sc.sky[1]);
+    g.fillStyle = sky; g.fillRect(xL - 10, -1200, xR - xL + 20, H + 2400);
+    const ctxd = { g, sc, pal, mode, th, xL, xR };
+    if (M.c.map === "city") drawCity(ctxd); else if (M.c.map === "harbour") drawHarbour(ctxd); else drawPark(ctxd);
+    // Night darkness over everything
+    if (sc.dark && !th) { g.fillStyle = "rgba(4,6,18," + sc.dark * 0.55 + ")"; g.fillRect(xL - 10, -1200, xR - xL + 20, H + 2400); }
     M.puffs.forEach((p) => {
       g.globalAlpha = 1 - p.t / 0.8; g.fillStyle = p.hit ? "#ffffff" : "#d9d2c4";
       g.beginPath(); g.arc(p.x, p.y, 4 + p.t * 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
     });
   }
-
-  function lightAt(p, sc) {
-    if (!sc.dark) return 1;
-    if (p.kind === "window") return M.lit[p.floor + ":" + WIN_X.indexOf(p.wx)] ? 1 : 0.35;
-    if (p.kind === "street") { const d = Math.min(...M.lamps.map((x) => Math.abs(x - p.x))); return d < 90 ? 1 : 0.5; }
-    return 0.55;
+  const R = (g, c, x, y, w, h) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  function drawSpot(d, id) {
+    M.people.filter((p) => p.spot === id && p.state !== "gone" && p.x > d.xL - 30 && p.x < d.xR + 30).sort((a, b) => a.y - b.y).forEach((p) => drawPerson(d.g, p, d));
   }
-  function drawPerson(g, p, sc, thermal) {
+  function drawWindows(d, frameCol, sillCol) {
+    const { g, th, pal } = d;
+    M.map.windows.forEach((w, i) => R(g, th ? "#0a1124" : M.lit[i] ? pal.winIn : pal.win, w.x, w.y, w.w, w.h));
+    M.people.filter((p) => p.spot === "win" && p.state !== "gone").forEach((p) => {
+      const w = M.map.windows[p.win];
+      g.save(); g.beginPath(); g.rect(w.x, w.y, w.w, w.h); g.clip(); drawPerson(g, p, d); g.restore();
+    });
+    M.map.windows.forEach((w) => {
+      g.strokeStyle = th ? "#18234a" : frameCol; g.lineWidth = 4; g.strokeRect(w.x, w.y, w.w, w.h);
+      g.beginPath(); g.moveTo(w.x + w.w / 2, w.y); g.lineTo(w.x + w.w / 2, w.y + w.h * 0.45); g.stroke();
+      R(g, th ? "#18234a" : sillCol, w.x - 8, w.y + w.h - 4, w.w + 16, 10);
+    });
+  }
+  function drawLaptopsAndMarks(d) {
+    const { g, mode } = d;
+    M.laptops.forEach((l) => {
+      if (l.owner.state === "gone" || l.owner.alpha <= 0.3) return;
+      const b = laptopBox(l);
+      R(g, mode === "far" ? "#30343a" : l.broken ? "#555" : "#2a2d33", b.x, b.y + b.h - 3, b.w, 3);
+      R(g, mode === "far" ? "#30343a" : l.broken ? "#777" : mode === "thermal" ? "#ffdd77" : "#9fd3ff", b.x + 1, b.y, b.w - 2, b.h - 3);
+    });
+  }
+  function drawCars(d) {
+    const { g, mode, th } = d;
+    M.cars.slice().sort((a, b) => a.lane - b.lane).forEach((car) => {
+      if (car.x < d.xL - 140 || car.x > d.xR + 140) return;
+      const col = mode === "far" ? "#2b2f36" : th ? "#3a2a4a" : CAR_COLS[car.color];
+      const x0 = car.x - car.len / 2, y = car.y;
+      const glass = mode === "far" ? "#3a3f48" : th ? "#22163a" : "#9cc4dc";
+      if (car.type === "van") {
+        R(g, col, x0, y - 54, car.len, 44);
+        R(g, glass, car.dir > 0 ? x0 + car.len - 22 : x0 + 4, y - 48, 18, 16);
+      } else if (car.type === "pickup") {
+        const cab = car.dir > 0 ? x0 + car.len * 0.45 : x0 + 8;
+        R(g, col, x0, y - 26, car.len, 16); R(g, col, cab, y - 46, car.len * 0.47, 22);
+        R(g, glass, cab + 6, y - 42, car.len * 0.47 - 12, 12);
+      } else {
+        R(g, col, x0, y - 28, car.len, 18);
+        g.fillStyle = col; g.beginPath(); g.moveTo(x0 + 18, y - 28); g.lineTo(x0 + 30, y - 44); g.lineTo(x0 + car.len - 30, y - 44); g.lineTo(x0 + car.len - 16, y - 28); g.fill();
+        R(g, glass, x0 + 32, y - 41, car.len - 64, 11);
+      }
+      wheelXs(car).forEach((wx) => {
+        g.fillStyle = mode === "far" ? "#15171a" : th ? "#ff9a3c" : "#121212"; g.beginPath(); g.arc(wx, y - 9, 9, 0, Math.PI * 2); g.fill();
+        if (!th && mode !== "far") { g.fillStyle = "#9a9a9a"; g.beginPath(); g.arc(wx, y - 9, 3.5, 0, Math.PI * 2); g.fill(); }
+      });
+      if (car.state === "stopped" && mode !== "far") { g.fillStyle = "rgba(220,220,220,.6)"; g.beginPath(); g.arc(car.x - car.dir * car.len * 0.5, y - 10, 10 + Math.random() * 4, 0, Math.PI * 2); g.fill(); }
+    });
+  }
+  function drawLamps(d, xs, top, base) {
+    const { g, th, sc } = d;
+    xs.forEach((x) => {
+      R(g, th ? "#18234a" : "#2b2e33", x - 3, top, 6, base - top);
+      R(g, th ? "#18234a" : sc.dark ? "#ffe9a8" : "#d8d8d8", x - 10, top - 6, 20, 8);
+      if (sc.dark && !th) { const lg = g.createRadialGradient(x, base - 40, 5, x, base - 40, 110); lg.addColorStop(0, "rgba(255,225,150,.35)"); lg.addColorStop(1, "rgba(255,225,150,0)"); g.fillStyle = lg; g.fillRect(x - 110, base - 150, 220, 220); }
+    });
+  }
+  function drawCity(d) {
+    const { g, pal, th, xL, xR } = d;
+    for (let x = Math.floor((xL - 200) / 200) * 200; x < xR + 200; x += 200) {
+      if (x + 200 > BLD_L - 40 && x < BLD_R + 40) continue;
+      const top = 300 + ((x / 200) % 3 + 3) % 3 * 120;
+      R(g, C(d.mode, pal.bld2), x, top, 190, 1180 - top);
+      g.fillStyle = th ? "#121c38" : pal.win;
+      for (let y = top + 30; y < 1150; y += 90) for (let wx = x + 20; wx < x + 180; wx += 55) g.fillRect(wx, y, 34, 50);
+    }
+    R(g, C(d.mode, pal.bld), BLD_L, ROOF, BLD_R - BLD_L, 1180 - ROOF);
+    R(g, C(d.mode, pal.bld2), BLD_L - 10, ROOF - 12, BLD_R - BLD_L + 20, 14);
+    R(g, C(d.mode, pal.bld2), 760, ROOF - 48, 70, 40); R(g, th ? "#0a1020" : "#2b2b2b", 782, ROOF - 40, 26, 32);
+    for (let f = 0; f < 6; f++) {
+      R(g, C(d.mode, pal.bld2), BLD_L, floorTop(f) + FLOOR_H - 6, BLD_R - BLD_L, 6);
+      if (f === 1 || f === 3) { g.fillStyle = th ? "#0a1124" : pal.win; for (let x = 150; x < 850; x += 140) g.fillRect(x, floorTop(f) + 20, 110, FLOOR_H - 34); }
+    }
+    R(g, th ? "#0a1124" : pal.win, 150, 1080, 280, 90); R(g, th ? "#0a1124" : pal.win, 570, 1080, 280, 90);
+    R(g, th ? "#08101f" : "#3a2a20", DOOR_X - 32, 1070, 64, 110);
+    drawWindows(d, "rgba(255,255,255,.55)", pal.bld2);
+    [1, 3].forEach((f) => {
+      drawSpot(d, f === 1 ? "bal1" : "bal3");
+      const y = balconyY(f);
+      R(g, th ? "#18234a" : "#5b5f66", BLD_L - 20, y, BLD_R - BLD_L + 40, 10);
+      g.strokeStyle = th ? "#18234a" : "#2b2e33"; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(BLD_L - 20, y - 18); g.lineTo(BLD_R + 20, y - 18);
+      for (let x = BLD_L - 20; x <= BLD_R + 20; x += 18) { g.moveTo(x, y - 18); g.lineTo(x, y); }
+      g.stroke();
+    });
+    drawSpot(d, "roof");
+    R(g, C(d.mode, pal.street), xL - 10, 1180, xR - xL + 20, 70);
+    R(g, th ? "#08101f" : pal.road, xL - 10, 1250, xR - xL + 20, 1800);
+    g.fillStyle = th ? "#0c142a" : "#e8e2c8";
+    for (let x = Math.floor(xL / 80) * 80; x < xR; x += 80) g.fillRect(x, 1316, 40, 5);
+    drawLamps(d, M.map.lamps, 1100, 1200);
+    drawSpot(d, "st0");
+    // advertising board
+    const cb = M.map.covers[0]; R(g, th ? "#18234a" : "#2b2e33", cb.x + 22, cb.y + cb.h, 8, 24); R(g, th ? "#18234a" : "#e94f37", cb.x, cb.y, cb.w, cb.h);
+    if (!th) { R(g, "#fff3d6", cb.x + 6, cb.y + 8, cb.w - 12, 22); R(g, "#ffd166", cb.x + 6, cb.y + 36, cb.w - 12, 28); }
+    drawSpot(d, "st1");
+    drawLaptopsAndMarks(d);
+    drawCars(d);
+    drawMarks(d);
+  }
+  function drawHarbour(d) {
+    const { g, pal, th, xL, xR } = d;
+    // far shore and cranes
+    R(g, th ? "#0b1328" : pal.far, xL - 10, 420, xR - xL + 20, 140);
+    for (let x = Math.floor((xL - 100) / 140) * 140; x < xR + 140; x += 140) R(g, th ? "#0e1730" : pal.far, x, 380 + ((x / 140) % 2 + 2) % 2 * 40, 90, 200);
+    g.strokeStyle = th ? "#18234a" : "#e0a030"; g.lineWidth = 8;
+    [[40, 180], [930, 160]].forEach(([x, top]) => { g.beginPath(); g.moveTo(x, 560); g.lineTo(x, top); g.lineTo(x + (x < 500 ? 220 : -220), top); g.moveTo(x, top + 40); g.lineTo(x + (x < 500 ? 120 : -120), top); g.stroke(); });
+    R(g, th ? "#08101f" : pal.sea, xL - 10, 520, xR - xL + 20, 420);
+    // ship
+    g.fillStyle = th ? "#101a36" : pal.hull; g.beginPath(); g.moveTo(60, 600); g.lineTo(940, 600); g.lineTo(900, 820); g.lineTo(100, 820); g.fill();
+    R(g, th ? "#0c142a" : "#f2f2f2", 60, 640, 880, 10);
+    R(g, th ? "#101a36" : "#efefef", 640, 400, 220, 200);
+    drawWindows(d, th ? "#18234a" : "#555", th ? "#18234a" : "#cfcfcf");
+    drawSpot(d, "bridge");
+    R(g, th ? "#18234a" : "#444", 640, 392, 220, 8);
+    drawSpot(d, "deck");
+    g.strokeStyle = th ? "#18234a" : "#e8e8e8"; g.lineWidth = 3; g.beginPath(); g.moveTo(70, 586); g.lineTo(640, 586);
+    for (let x = 70; x <= 640; x += 20) { g.moveTo(x, 586); g.lineTo(x, 600); } g.stroke();
+    // quay and containers
+    R(g, C(d.mode, pal.quay), xL - 10, 940, xR - xL + 20, 1000);
+    const cont = [["#c0392b", "#2c6fb0"], ["#2e8b57", "#d4a017"]];
+    [[120, 0], [640, 1]].forEach(([x, k]) => {
+      R(g, th ? "#101a36" : cont[k][0], x, 860, 220, 70); R(g, th ? "#0e1730" : cont[k][1], x, 930, 220, 70);
+      g.strokeStyle = th ? "#0a1124" : "rgba(0,0,0,.25)"; g.lineWidth = 2;
+      for (let xx = x + 12; xx < x + 220; xx += 14) { g.beginPath(); g.moveTo(xx, 862); g.lineTo(xx, 998); g.stroke(); }
+    });
+    drawSpot(d, "contA"); drawSpot(d, "contB");
+    drawLamps(d, M.map.lamps, 960, 1045);
+    drawSpot(d, "q0");
+    const cb = M.map.covers[0]; R(g, th ? "#101a36" : "#9a6b3d", cb.x, cb.y, cb.w, cb.h);
+    if (!th) { g.strokeStyle = "rgba(0,0,0,.3)"; g.lineWidth = 2; g.strokeRect(cb.x + 2, cb.y + 2, cb.w / 2 - 4, cb.h - 4); g.strokeRect(cb.x + cb.w / 2 + 2, cb.y + 2, cb.w / 2 - 4, cb.h - 4); }
+    drawSpot(d, "q1");
+    R(g, th ? "#08101f" : pal.road, xL - 10, 1120, xR - xL + 20, 140);
+    g.fillStyle = th ? "#0c142a" : "#e8e2c8"; for (let x = Math.floor(xL / 80) * 80; x < xR; x += 80) g.fillRect(x, 1196, 40, 5);
+    R(g, th ? "#08101f" : pal.sea, xL - 10, 1260, xR - xL + 20, 1800);
+    drawLaptopsAndMarks(d);
+    drawCars(d);
+    drawMarks(d);
+  }
+  function drawPark(d) {
+    const { g, pal, th, xL, xR } = d;
+    for (let x = Math.floor((xL - 100) / 120) * 120; x < xR + 120; x += 120) R(g, th ? "#0e1730" : pal.far, x, 420 + ((x / 120) % 3 + 3) % 3 * 50, 100, 400);
+    g.fillStyle = th ? "#0c1630" : pal.tree;
+    for (let x = Math.floor((xL - 100) / 90) * 90; x < xR + 90; x += 90) { g.beginPath(); g.arc(x, 760 + ((x / 90) % 2) * 20, 70, 0, Math.PI * 2); g.fill(); }
+    R(g, C(d.mode, pal.grass), xL - 10, 840, xR - xL + 20, 1800);
+    // café
+    R(g, C(d.mode, "#e7dccb"), 600, 560, 360, 330); R(g, th ? "#18234a" : "#2f6b4f", 600, 600, 360, 18);
+    drawWindows(d, th ? "#18234a" : "#2f6b4f", th ? "#18234a" : "#c9bba6");
+    drawSpot(d, "terrace");
+    g.strokeStyle = th ? "#18234a" : "#333"; g.lineWidth = 3; g.beginPath(); g.moveTo(605, 546); g.lineTo(955, 546);
+    for (let x = 605; x <= 955; x += 18) { g.moveTo(x, 546); g.lineTo(x, 560); } g.stroke();
+    R(g, C(d.mode, pal.path), xL - 10, 905, xR - xL + 20, 40);
+    drawSpot(d, "p0");
+    // trees in front of the back path
+    M.map.covers.forEach((c) => { if (c.r) { g.fillStyle = th ? "#0e1a36" : pal.tree; g.beginPath(); g.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); g.fill(); } else R(g, th ? "#0e1a36" : "#5a3d26", c.x, c.y, c.w, c.h); });
+    // benches and fountain
+    [[95, 2], [675, 2], [845, 2]].forEach(([x, n]) => { R(g, th ? "#18234a" : "#6b4a2e", x, 1030, 32 + n * 31, 8); });
+    drawSpot(d, "sit");
+    [[95, 2], [675, 2], [845, 2]].forEach(([x, n]) => { R(g, th ? "#18234a" : "#7d5838", x, 1046, 32 + n * 31, 6); R(g, th ? "#18234a" : "#333", x + 4, 1052, 4, 10); R(g, th ? "#18234a" : "#333", x + 24 + n * 31, 1052, 4, 10); });
+    R(g, th ? "#101a36" : "#b9b4aa", 330, 1020, 240, 60); R(g, th ? "#0c142a" : "#6fb3d9", 342, 1026, 216, 14);
+    if (!th) { g.fillStyle = "rgba(170,215,240,.8)"; g.fillRect(445, 950, 10, 76); }
+    drawLamps(d, M.map.lamps, 1080, 1170);
+    R(g, C(d.mode, pal.path), xL - 10, 1170, xR - xL + 20, 50);
+    drawSpot(d, "p1");
+    drawLaptopsAndMarks(d);
+    drawMarks(d);
+  }
+  // Witness and attacker markers, visible from far away too.
+  function drawMarks(d) {
+    const { g, mode } = d;
+    M.people.forEach((p) => {
+      if (p.state === "gone" || p.state === "down") return;
+      const hy = p.y - (p.sit ? 34 : 44);
+      if (p.vip) { g.strokeStyle = "#6cf08f"; g.lineWidth = mode === "far" ? 5 : 2.5; g.beginPath(); g.arc(p.x, hy, mode === "far" ? 16 : 12, 0, Math.PI * 2); g.stroke(); }
+      if (p.attacker && p.revealed) {
+        g.fillStyle = "#ff3b30"; g.font = "900 " + (mode === "far" ? 34 : 16) + "px sans-serif"; g.textAlign = "center";
+        g.fillText("!", p.x, hy - (mode === "far" ? 16 : 12));
+      }
+    });
+  }
+
+  function lightAt(p, d) {
+    if (!d.sc.dark) return 1;
+    if (p.spot === "win") return M.lit[p.win] ? 1 : 0.35;
+    const lamp = Math.min(...M.map.lamps.map((x) => Math.abs(x - p.x)));
+    if (Math.abs(p.y - M.map.lampY) < 120 && lamp < 90) return 1;
+    return d.sc.dark > 0.5 ? 0.5 : 0.7;
+  }
+  function drawPerson(g, p, d) {
     g.save();
     g.globalAlpha = p.alpha;
-    if (p.state === "down") {
-      // Slumps over and fades: no gore.
-      g.translate(p.x, p.y); g.rotate(p.fall * Math.PI / 2 * (p.dir || 1)); g.translate(-p.x, -p.y); g.globalAlpha = 1 - p.fall * 0.45;
-    }
-    if (thermal) {
-      const tg = g.createRadialGradient(p.x, p.y - 26, 2, p.x, p.y - 26, 30);
+    if (p.state === "down") { g.translate(p.x, p.y); g.rotate(p.fall * Math.PI / 2 * (p.dir || 1)); g.translate(-p.x, -p.y); g.globalAlpha = 1 - p.fall * 0.45; }
+    if (d.mode === "thermal") {
+      const hy = p.sit ? 34 : 44;
+      const tg = g.createRadialGradient(p.x, p.y - hy + 18, 2, p.x, p.y - hy + 18, 30);
       tg.addColorStop(0, "#ffffe0"); tg.addColorStop(0.35, "#ffb02e"); tg.addColorStop(1, "rgba(220,40,40,0)");
-      g.fillStyle = tg; g.beginPath(); g.ellipse(p.x, p.y - 24, 13, 26, 0, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(p.x, p.y - 44, 8, 0, Math.PI * 2); g.fillStyle = "#fff6c8"; g.fill();
+      g.fillStyle = tg; g.beginPath(); g.ellipse(p.x, p.y - hy + 20, 13, p.sit ? 18 : 26, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(p.x, p.y - hy, 8, 0, Math.PI * 2); g.fillStyle = "#fff6c8"; g.fill();
     } else {
-      drawBody(g, p.x, p.y, p.look, lightAt(p, sc), p.state === "idle" && p.pause > 0 ? 0 : p.walk, p.state === "flee");
+      drawBody(g, p.x, p.y, p.look, lightAt(p, d), (p.pause > 0 || p.still) ? 0 : p.walk, p.state === "flee", d.mode === "far", p.sit && p.state !== "flee", p.state === "attack");
     }
     g.restore();
   }
@@ -861,45 +1222,49 @@ h1.logo span { color: var(--green); }
     const n = parseInt(hex.slice(1), 16), r = (n >> 16) * k, gg = ((n >> 8) & 255) * k, b = (n & 255) * k;
     return "rgb(" + (r | 0) + "," + (gg | 0) + "," + (b | 0) + ")";
   }
-  function drawBody(g, x, y, look, light, walk, flee) {
-    const L = (c) => shade(c, light), sw2 = Math.sin(walk) * (flee ? 6 : 3.5);
+  function drawBody(g, x, y, look, light, walk, flee, far, sit, attack) {
+    const L = (c) => (far ? "#262a31" : shade(c, light)), sw2 = Math.sin(walk) * (flee ? 6 : 3.5);
+    const lift = sit ? 10 : 0;
     // legs
     g.fillStyle = L(look.legs);
-    g.fillRect(x - 6 + sw2 * 0.4, y - 18, 5, 18); g.fillRect(x + 1 - sw2 * 0.4, y - 18, 5, 18);
-    // body
+    if (sit) { g.fillRect(x - 7, y - 12, 14, 5); g.fillRect(x - 7 + 9, y - 12, 5, 12); g.fillRect(x - 7, y - 12, 5, 12); }
+    else { g.fillRect(x - 6 + sw2 * 0.4, y - 18, 5, 18); g.fillRect(x + 1 - sw2 * 0.4, y - 18, 5, 18); }
+    const by = y - lift;
     g.fillStyle = L(COLS[look.top]);
-    g.beginPath(); g.roundRect ? g.roundRect(x - 9, y - 37, 18, 21, 4) : g.rect(x - 9, y - 37, 18, 21); g.fill();
-    // arms
+    g.beginPath(); g.roundRect ? g.roundRect(x - 9, by - 37, 18, 21, 4) : g.rect(x - 9, by - 37, 18, 21); g.fill();
     g.strokeStyle = L(COLS[look.top]); g.lineWidth = 4.5; g.lineCap = "round";
-    g.beginPath(); g.moveTo(x - 8, y - 34); g.lineTo(x - 10 - sw2 * 0.3, y - 20 + (flee ? -8 : 0)); g.moveTo(x + 8, y - 34); g.lineTo(x + 10 + sw2 * 0.3, y - 20 + (flee ? -8 : 0)); g.stroke();
-    if (look.acc === "briefcase") { g.fillStyle = L("#4a2f1b"); g.fillRect(x + 8 + sw2 * 0.3, y - 21, 10, 8); }
-    // head
-    g.fillStyle = L(look.skin); g.beginPath(); g.arc(x, y - 44, 7, 0, Math.PI * 2); g.fill();
-    // hair
-    g.fillStyle = L(HAIRS[look.hair]); g.beginPath(); g.arc(x, y - 46, 7.2, Math.PI * 1.02, Math.PI * 1.98); g.fill();
-    g.fillRect(x - 7, y - 47, 2.5, 5); g.fillRect(x + 4.5, y - 47, 2.5, 5);
-    if (look.acc === "glasses") { g.fillStyle = L("#0b0b0b"); g.fillRect(x - 6, y - 46, 12, 3.4); }
-    // hat
+    g.beginPath();
+    if (attack) { g.moveTo(x - 8, by - 34); g.lineTo(x - 10, by - 20); g.moveTo(x + 8, by - 34); g.lineTo(x + 18, by - 40); }
+    else { g.moveTo(x - 8, by - 34); g.lineTo(x - 10 - sw2 * 0.3, by - 20 + (flee ? -8 : 0)); g.moveTo(x + 8, by - 34); g.lineTo(x + 10 + sw2 * 0.3, by - 20 + (flee ? -8 : 0)); }
+    g.stroke();
+    if (attack && !far) { g.fillStyle = "#111"; g.fillRect(x + 15, by - 46, 6, 8); }
+    if (look.acc === "briefcase" && !sit && !attack) { g.fillStyle = L("#4a2f1b"); g.fillRect(x + 8 + sw2 * 0.3, by - 21, 10, 8); }
+    g.fillStyle = L(look.skin); g.beginPath(); g.arc(x, by - 44, 7, 0, Math.PI * 2); g.fill();
+    g.fillStyle = L(HAIRS[look.hair]); g.beginPath(); g.arc(x, by - 46, 7.2, Math.PI * 1.02, Math.PI * 1.98); g.fill();
+    g.fillRect(x - 7, by - 47, 2.5, 5); g.fillRect(x + 4.5, by - 47, 2.5, 5);
+    if (look.acc === "glasses") { g.fillStyle = L("#0b0b0b"); g.fillRect(x - 6, by - 46, 12, 3.4); }
     if (look.hat !== "none") {
       g.fillStyle = L(COLS[look.hatC]);
-      if (look.hat === "cap") { g.beginPath(); g.arc(x, y - 47, 7.6, Math.PI, 0); g.fill(); g.fillRect(x - 1, y - 48.5, 11, 2.6); }
-      else if (look.hat === "fedora") { g.fillRect(x - 11, y - 50, 22, 2.8); g.fillRect(x - 6.5, y - 57, 13, 7.5); }
-      else { g.beginPath(); g.arc(x, y - 47, 7.8, Math.PI, 0); g.fill(); g.fillRect(x - 7.8, y - 48, 15.6, 3); }
+      if (look.hat === "cap") { g.beginPath(); g.arc(x, by - 47, 7.6, Math.PI, 0); g.fill(); g.fillRect(x - 1, by - 48.5, 11, 2.6); }
+      else if (look.hat === "fedora") { g.fillRect(x - 11, by - 50, 22, 2.8); g.fillRect(x - 6.5, by - 57, 13, 7.5); }
+      else { g.beginPath(); g.arc(x, by - 47, 7.8, Math.PI, 0); g.fill(); g.fillRect(x - 7.8, by - 48, 15.6, 3); }
     }
   }
 
   // ---------- endings
   function endMission(ok, title, text) {
     if (M.over) return;
-    M.over = true; M.holding = false;
+    M.over = true; M.holding = false; M.outcome = ok ? "OK" : title;
     $("ctrlL").hidden = true; $("ctrlR").hidden = true; $("hint").hidden = true;
-    const c = M.c;
+    const c = M.c, mm = M;
     setTimeout(() => {
+      if (M !== mm) return;   // a new mission has already started
       if (ok) {
-        const oneShot = M.shots === c.n, quiet = !M.alarm, fast = M.elapsed < c.time / 2;
+        const needed = c.type === "elim" ? c.n : c.type === "overwatch" ? c.attackers : 1;
+        const oneShot = M.shots <= needed, quiet = !M.alarm, fast = M.elapsed < c.time / 2 && c.type !== "overwatch";
         const rows = [["Contract fee", c.pay]];
-        if (oneShot) rows.push(["One shot per target +25%", Math.round(c.pay * 0.25)]);
-        if (quiet) rows.push(["Nobody spotted you +15%", Math.round(c.pay * 0.15)]);
+        if (oneShot) rows.push(["No wasted shots +25%", Math.round(c.pay * 0.25)]);
+        if (quiet && c.type !== "overwatch") rows.push(["Nobody spotted you +15%", Math.round(c.pay * 0.15)]);
         if (fast) rows.push(["Fast work +10%", Math.round(c.pay * 0.1)]);
         const total = rows.reduce((t, r) => t + r[1], 0);
         const rep = c.rep + (oneShot ? Math.ceil(c.rep * 0.3) : 0);
@@ -914,7 +1279,7 @@ h1.logo span { color: var(--green); }
           p.appendChild(el("h2", "ok", "Contract complete"));
           p.appendChild(el("p", null, "Operation " + c.code + " is done. The payment has landed."));
           const r = el("div", "rows");
-          rows.forEach(([a, b]) => { const d = el("div"); d.append(el("span", null, a), el("span", null, fmt$(b))); r.appendChild(d); });
+          rows.forEach(([a, b]) => { const dd = el("div"); dd.append(el("span", null, a), el("span", null, fmt$(b))); r.appendChild(dd); });
           const t = el("div", "total"); t.append(el("span", null, "Total"), el("span", null, fmt$(total))); r.appendChild(t);
           const rp = el("div"); rp.append(el("span", null, "Reputation"), el("span", null, "+" + rep + " (" + save.rep + ")")); r.appendChild(rp);
           p.appendChild(r);
@@ -925,10 +1290,10 @@ h1.logo span { color: var(--green); }
         // When played inside HhGames, offer the reputation for its leaderboard.
         if (newBest) { try { if (window.parent !== window) window.parent.postMessage({ type: "hh-score", game: "long-shot", score: save.rep }, "*"); } catch (e) {} }
       } else {
-        save.failed++; save.rep = Math.max(0, save.rep - 3); persist(); sfx.fail(); buzz([60, 40, 60]);
+        save.failed++; save.rep = Math.max(0, save.rep - 5); persist(); sfx.fail(); buzz([60, 40, 60]);
         openOverlay((p) => {
           p.appendChild(el("h2", "bad", title));
-          p.appendChild(el("p", null, text + " You lose 3 reputation."));
+          p.appendChild(el("p", null, text + " You lose 5 reputation."));
           const again = el("button", "btn wide", "Try again"); again.type = "button"; again.onclick = () => { closeOverlay(); startMission(c); };
           const back = el("button", "btn ghost wide", "Back to the safehouse"); back.type = "button"; back.style.marginTop = "10px"; back.onclick = () => { closeOverlay(); M = null; renderHub(); };
           p.append(again, back);
@@ -937,6 +1302,7 @@ h1.logo span { color: var(--green); }
     }, ok ? 1100 : 700);
   }
 
+  if (TEST) window.LSX = { genContract, startMission, get M() { return M; } };
   resize();
   requestAnimationFrame(frame);
   show("title");
