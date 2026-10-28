@@ -5,7 +5,7 @@
 create table if not exists public.reviews (
   id uuid primary key default gen_random_uuid(),
   game_id text not null
-    check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack', 'number-ten')),
+    check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack', 'number-ten', 'long-shot')),
   rating smallint not null check (rating between 1 and 5),
   name text not null check (char_length(btrim(name)) between 1 and 40),
   comment text not null default '' check (char_length(comment) <= 500),
@@ -39,7 +39,7 @@ grant insert (game_id, rating, name, comment) on public.reviews to anon, authent
 -- 2. Leaderboards -------------------------------------------------------------------
 create table if not exists public.scores (
   id uuid primary key default gen_random_uuid(),
-  game_id text not null check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'darts-championship', 'tower-stack', 'number-ten')),
+  game_id text not null check (game_id in ('track-star-3d', 'army-rush', 'street-to-superstar', 'darts-championship', 'tower-stack', 'number-ten', 'long-shot')),
   name text not null check (char_length(btrim(name)) between 1 and 20 and name !~* '(https?://|www\.)'),
   score integer not null check (score between 1 and 100000000),
   created_at timestamptz not null default now()
@@ -60,7 +60,7 @@ create table if not exists public.play_counts (
   game_id text primary key,
   plays bigint not null default 0
 );
-insert into public.play_counts (game_id) values ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('darts-championship'), ('tower-stack'), ('number-ten')
+insert into public.play_counts (game_id) values ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('darts-championship'), ('tower-stack'), ('number-ten'), ('long-shot')
   on conflict (game_id) do nothing;
 
 alter table public.play_counts enable row level security;
@@ -84,7 +84,7 @@ grant execute on function public.count_play(text) to anon, authenticated;
 -- 4. Bug reports (private: read them in Table Editor → reports) --------------------
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
-  about text not null check (about in ('website', 'track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack', 'number-ten')),
+  about text not null check (about in ('website', 'track-star-3d', 'army-rush', 'street-to-superstar', 'quick-chaos', 'darts-championship', 'tower-stack', 'number-ten', 'long-shot')),
   message text not null check (char_length(btrim(message)) between 10 and 1000),
   name text not null default '' check (char_length(name) <= 40),
   device text not null default '' check (char_length(device) <= 120),
@@ -104,6 +104,7 @@ grant insert (about, message, name, device) on public.reports to anon, authentic
 -- Darts: 180 is the most one visit can score.
 -- Street to Superstar: 60 seconds at most 8 points a shot is well under 500.
 -- Tower Stack: one point a block, and 5,000 blocks is far beyond anyone.
+-- Long Shot: reputation grows with every contract; a million is far beyond anyone.
 -- Number 10: a career is at most five terms of 8,600 (650 seats, five years served) plus 1,500 for a full Treasury: 44,500.
 -- Track Star 3D and Army Rush: change these if real players ever get close.
 alter table public.scores drop constraint if exists scores_max_check;
@@ -115,6 +116,7 @@ alter table public.scores add constraint scores_max_check check (
     when 'track-star-3d'       then score <= 10000000
     when 'tower-stack'         then score <= 5000
     when 'number-ten'          then score <= 44500
+    when 'long-shot'           then score <= 1000000
     else true
   end
 ) not valid;   -- "not valid" leaves scores that are already saved alone
@@ -167,7 +169,7 @@ revoke all on public.games from anon, authenticated;
 
 insert into public.games (id) values
   ('website'),                       -- used by bug reports about the website itself
-  ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('quick-chaos'), ('darts-championship'), ('tower-stack'), ('number-ten')
+  ('track-star-3d'), ('army-rush'), ('street-to-superstar'), ('quick-chaos'), ('darts-championship'), ('tower-stack'), ('number-ten'), ('long-shot')
 on conflict (id) do nothing;
 
 -- Every game gets a play counter automatically.
